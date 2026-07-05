@@ -1,66 +1,3 @@
-"""Script Generator Agent Node — generates the Python calculation script.
-
-This module defines the ``script_generator`` LLM Agent node that produces a
-sandboxed Python calculation script for a given calculator blueprint.
-
-Workflow Position
------------------
-The node sits on the "script" branch of the parallel fork that follows the
-intent_router.  Its edges in the workflow graph are::
-
-    intent_router ──CALCULATOR──► (ui_schema_generator, script_generator)
-                                                        │
-                                          script_generator
-                                                │
-                                          script_validator
-                                           ╱            ╲
-                              RETRY_INVALID              VALID
-                              (loops back to        (goes to sandbox_check
-                               script_generator)     then script_judge)
-                                                          ╱        ╲
-                                                    INVALID        VALID
-                                                  (loops back   (proceeds to
-                                                   to script_    persist_and_
-                                                   generator)    respond)
-
-There are **two** retry loops that feed back into this node:
-
-1. **script_validator → script_generator** — when the generated code has
-   syntax errors, missing ``calculate`` entrypoint, or other structural
-   issues.  The error message is injected via ``{script_validation_error?}``.
-2. **script_judge → script_generator** — when the code is syntactically
-   valid but fails a semantic review (e.g. wrong keys, missing edge cases,
-   logic/schema mismatch).  Feedback is injected via
-   ``{script_judge_feedback?}``.
-
-Both retry paths also inject ``{generated_script?}`` so the LLM can see its
-own previous attempt and make targeted fixes rather than regenerating from
-scratch.
-
-Template Variables (ADK State Injection)
-----------------------------------------
-The instruction string uses ADK's template syntax to pull values from
-``CalculatorWorkflowState`` at invocation time:
-
-* ``{blueprint}``  — **required**; the structured calculator blueprint
-  produced by ``blueprint_generator``.  Always present when this node runs.
-* ``{script_validation_error?}`` — **optional** (``?`` suffix); populated
-  only on retry after ``script_validator`` finds issues.  Empty on first run.
-* ``{script_judge_feedback?}`` — **optional**; populated only on retry after
-  ``script_judge`` returns an ``INVALID`` verdict.  Empty on first run and
-  on validator-only retries.
-* ``{generated_script?}`` — **optional**; the previously generated script.
-  Empty on first run, present on every retry so the LLM can apply
-  incremental fixes.
-
-Output
-------
-The agent returns a structured ``ScriptGeneratorOutput`` (Pydantic model with
-a single ``script_content: str`` field).  ADK serialises this dict into
-``state['script_generator_output']`` so downstream nodes (``script_validator``,
-``script_judge``) can consume it.
-"""
-
 """
 Script Generator Agent Node
 
@@ -86,6 +23,8 @@ Output:
 - The output is validated against `ScriptGeneratorOutput` schema.
 - The `output_key="script_generator_output"` ensures the result is automatically stored in `ctx.state`.
 """
+
+
 
 from google.adk.agents import Agent
 from google.adk.models import Gemini
@@ -138,4 +77,4 @@ script_generator = Agent(
     output_schema=ScriptGeneratorOutput,
     # Automatically saves the output to ctx.state["script_generator_output"]
     output_key="script_generator_output",
-
+)

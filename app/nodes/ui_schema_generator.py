@@ -42,23 +42,7 @@ Why ``include_contents='none'``:
     history would only add noise and consume tokens.
 """
 
-"""
-UI Schema Generator Agent Node
 
-This file defines the `ui_schema_generator` Agent Node for the ADK Workflow.
-Role: It constructs a massive A2UI instruction prompt to generate a declarative
-A2UI JSON payload that exactly matches the structured backend `blueprint`.
-
-Key ADK Mechanics:
-- Uses `A2uiSchemaManager` to dynamically assemble a system prompt combining the
-  framework's JSON schema spec, available components, and the user's specific blueprint.
-- It uses `include_contents='none'` (state-based context injection instead of history).
-- It does NOT use `output_schema` (Vertex AI function calling restricts raw JSON structure).
-  Instead, it relies on strict prompt instructions to generate raw JSON, which is then
-  parsed and validated downstream by `ui_schema_validator`.
-- On validation failures, the exact error messages are appended to the instruction
-  prompt for the next retry iteration.
-"""
 
 from google.adk.agents import Agent
 from google.adk.models import Gemini
