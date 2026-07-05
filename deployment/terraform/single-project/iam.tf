@@ -64,3 +64,19 @@ resource "google_project_iam_member" "firestore_user" {
   member     = "serviceAccount:${google_service_account.app_sa.email}"
   depends_on = [resource.google_project_service.services]
 }
+
+# CRITICAL: GKE Service Agent Permissions (Fixes "Can't scale up nodes")
+resource "google_project_iam_member" "gke_robot_node_sa" {
+  project    = var.project_id
+  role       = "roles/container.defaultNodeServiceAccount"
+  member     = "serviceAccount:service-${data.google_project.project.number}@container-engine-robot.iam.gserviceaccount.com"
+  depends_on = [resource.google_project_service.services]
+}
+
+# CRITICAL: Cloud Build Service Agent Permissions (Fixes "FETCHSOURCE" 403)
+resource "google_project_iam_member" "cb_agent_devconnect" {
+  project    = var.project_id
+  role       = "roles/developerconnect.readWrite"
+  member     = "serviceAccount:service-${data.google_project.project.number}@gcp-sa-cloudbuild.iam.gserviceaccount.com"
+  depends_on = [resource.google_project_service.services]
+}
