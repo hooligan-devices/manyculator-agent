@@ -1,0 +1,46 @@
+{
+  "eval_cases": [
+    {
+      "eval_case_id": "simple_percentage",
+      "prompt": {
+        "role": "user",
+        "parts": [{"text": "Create a tip calculator. I want to enter the bill amount and tip percentage, and see the tip amount and total."}]
+      }
+    },
+    {
+      "eval_case_id": "unit_conversion",
+      "prompt": {
+        "role": "user",
+        "parts": [{"text": "Build a converter from kilograms to pounds. Just one input for kg and one output for pounds."}]
+      }
+    },
+    {
+      "eval_case_id": "multi_param_formula",
+      "prompt": {
+        "role": "user",
+        "parts": [{"text": "Make a BMI calculator. It should take height in centimeters and weight in kilograms, then show the BMI value."}]
+      }
+    },
+    {
+      "eval_case_id": "financial_calculator",
+      "prompt": {
+        "role": "user",
+        "parts": [{"text": "Create a compound interest calculator. Inputs: principal amount, annual interest rate, and number of years. Show the final amount and total interest earned."}]
+      }
+    },
+    {
+      "eval_case_id": "reject_non_calculator",
+      "prompt": {
+        "role": "user",
+        "parts": [{"text": "What's the weather like in Paris today?"}]
+      }
+    },
+    {
+      "eval_case_id": "reject_chat",
+      "prompt": {
+        "role": "user",
+        "parts": [{"text": "Tell me a joke about programming"}]
+      }
+    }
+  ]
+}

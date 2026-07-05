@@ -1,0 +1,301 @@
+from google.adk.code_executors import GkeCodeExecutor
+
+_executor = None
+
+def get_executor():
+    global _executor
+    if _executor is None:
+        import os
+        use_gke = os.environ.get("KUBERNETES_SERVICE_HOST") is not None or os.environ.get("USE_GKE_EXECUTOR", "").lower() == "true"
+        
+        if use_gke:
+            try:
+                _executor = GkeCodeExecutor(namespace="calc-agent")
+                
+                # Fix for python-kubernetes v36.0.0 bug where incluster token is loaded to 'authorization' but not 'BearerToken'
+                if hasattr(_executor, "_core_v1") and getattr(_executor._core_v1, "api_client", None):
+                    cfg = _executor._core_v1.api_client.configuration
+                    if cfg and cfg.api_key and "authorization" in cfg.api_key and "BearerToken" not in cfg.api_key:
+                        cfg.api_key["BearerToken"] = cfg.api_key["authorization"]
+                        
+                if hasattr(_executor, "_batch_v1") and getattr(_executor._batch_v1, "api_client", None):
+                    cfg = _executor._batch_v1.api_client.configuration
+                    if cfg and cfg.api_key and "authorization" in cfg.api_key and "BearerToken" not in cfg.api_key:
+                        cfg.api_key["BearerToken"] = cfg.api_key["authorization"]
+                        
+                    # Monkeypatch to remove gvisor requirement to prevent 'GCE quota exceeded' errors
+                    # in free/dev environments that limit N2 instance scaling.
+                    from ..config import settings
+                    if settings.sandbox_bypass_gvisor:
+                        original_create = _executor._batch_v1.create_namespaced_job
+                        def create_namespaced_job_patched(namespace, body, **kwargs):
+                            if body.spec and body.spec.template and body.spec.template.spec:
+                                if body.spec.template.spec.runtime_class_name == "gvisor":
+                                    # Disable gvisor runtime class since it requires specific N2/N2D node types 
+                                    # which can trigger GCE quota issues in limited/free-tier projects.
+                                    body.spec.template.spec.runtime_class_name = None
+                                if body.spec.template.spec.tolerations:
+                                    # Remove the gvisor scheduling toleration so the pod can schedule on standard 
+                                    # nodes (e2 family) where quota is readily available.
+                                    body.spec.template.spec.tolerations = [
+                                        t for t in body.spec.template.spec.tolerations
+                                        if t.key != "sandbox.gke.io/runtime"
+                                    ]
+                            return original_create(namespace, body, **kwargs)
+                        _executor._batch_v1.create_namespaced_job = create_namespaced_job_patched
+                        
+            except Exception as e:
+                print(f"Warning: Failed to init GkeCodeExecutor ({e}). Using mock executor.")
+                use_gke = False
+                
+        if not use_gke:
+            class DummyExecutor:
+                def execute_code(self, invocation_context, code_execution_input):
+                    code = code_execution_input.code
+                    import sys
+                    import io
+                    import traceback
+                    class DummyResult:
+                        pass
+                    res = DummyResult()
+                    
+                    old_stdout = sys.stdout
+                    redirected_output = sys.stdout = io.StringIO()
+                    try:
+                        exec(code, {})
+                        res.exit_code = 0
+                        res.output = redirected_output.getvalue()
+                    except SystemExit as e:
+                        res.exit_code = e.code or 0
+                        res.output = redirected_output.getvalue()
+                    except Exception as e:
+                        res.exit_code = 1
+                        res.output = redirected_output.getvalue() + "\\n" + traceback.format_exc()
+                    finally:
+                        sys.stdout = old_stdout
+                    return res
+            _executor = DummyExecutor()
+    return _executor
+
+def _get_mock_invocation_context():
+    import uuid
+    class MockInvocationContext:
+        def __init__(self):
+            self.invocation_id = str(uuid.uuid4())
+    return MockInvocationContext()
+
+def run_tests(script: str, tests: str) -> dict:
+    """Execute the calculator script and its tests in the sandbox."""
+    import tempfile
+    import os
+    
+    # Write script and tests into a temporary file
+    code_to_run = f"{script}\n\n{tests}\n"
+    
+    executor = get_executor()
+    
+    # We must use the executor to run pytest on the specific temp file
+    # The dummy executor runs exec(), so we need to write the file inside the exec context
+    runner_code = f"""
+import sys
+import traceback
+from types import ModuleType
+import math
+
+# Mock pytest to avoid ModuleNotFoundError and support pytest.approx
+class Approx:
+    def __init__(self, expected, rel=None, abs=None, nan_ok=False):
+        self.expected = expected
+        self.abs = abs if abs is not None else 1e-6
+    
+    def __eq__(self, actual):
+        def compare(act, exp):
+            if isinstance(exp, dict) and isinstance(act, dict):
+                return len(exp) == len(act) and all(compare(act[k], exp[k]) for k in exp if k in act)
+            if isinstance(exp, (list, tuple)) and isinstance(act, (list, tuple)):
+                return len(exp) == len(act) and all(compare(act[i], exp[i]) for i in range(len(exp)))
+            if isinstance(exp, (int, float)) and isinstance(act, (int, float)):
+                return math.isclose(act, exp, abs_tol=self.abs)
+            return act == exp
+        return compare(actual, self.expected)
+        
+    def __repr__(self):
+        return f"approx({{self.expected}})"
+
+mock_pytest = ModuleType("pytest")
+mock_pytest.approx = Approx
+mock_pytest.main = lambda *a, **kw: 0
+sys.modules["pytest"] = mock_pytest
+
+code_to_run = {repr(code_to_run)}
+
+try:
+    namespace = {{}}
+    exec(code_to_run, namespace)
+    
+    test_funcs = [func for name, func in namespace.items() if name.startswith('test_') and callable(func)]
+    
+    # Also discover test methods inside classes starting with Test (for legacy/cache sessions)
+    for name, obj in namespace.items():
+        if name.startswith('Test') and isinstance(obj, type):
+            try:
+                instance = obj()
+                for attr_name in dir(instance):
+                    if attr_name.startswith('test_') and callable(getattr(instance, attr_name)):
+                        test_funcs.append(getattr(instance, attr_name))
+            except Exception:
+                pass
+                
+    if not test_funcs:
+        print("No test functions found!")
+        sys.exit(1)
+        
+    for func in test_funcs:
+        func()
+        
+    print("All tests passed!")
+    sys.exit(0)
+except Exception as e:
+    traceback.print_exc()
+    sys.exit(1)
+"""
+    
+    try:
+        from google.adk.code_executors.code_execution_utils import CodeExecutionInput
+        result = executor.execute_code(_get_mock_invocation_context(), CodeExecutionInput(code=runner_code))
+        exit_code, output = extract_result(result)
+        
+        return {
+            "passed": exit_code == 0,
+            "error_output": output if exit_code != 0 else "",
+            "output": output
+        }
+    except Exception as e:
+        return {
+            "passed": False,
+            "error_output": str(e),
+            "output": ""
+        }
+
+def execute_calculation(script: str, inputs: dict) -> dict:
+    """Execute the calculator script with specific inputs and return the output dict."""
+    import json
+    
+    # Append a runner block that calls the calculate function and prints its output as JSON
+    inputs_json = json.dumps(inputs)
+    code_to_run = f"{script}\n\n"
+    code_to_run += f"import json\n"
+    code_to_run += f"inputs = json.loads({repr(inputs_json)})\n"
+    code_to_run += f"try:\n"
+    code_to_run += f"    result = calculate(inputs)\n"
+    code_to_run += f"    print('__EVAL_START__')\n"
+    code_to_run += f"    print(json.dumps(result))\n"
+    code_to_run += f"    print('__EVAL_END__')\n"
+    code_to_run += f"except Exception as e:\n"
+    code_to_run += f"    print('__EVAL_ERROR__')\n"
+    code_to_run += f"    print(str(e))\n"
+    
+    executor = get_executor()
+    
+    try:
+        from google.adk.code_executors.code_execution_utils import CodeExecutionInput
+        result = executor.execute_code(_get_mock_invocation_context(), CodeExecutionInput(code=code_to_run))
+        exit_code, output = extract_result(result)
+        
+        if "__EVAL_ERROR__" in output:
+            error_msg = output.split("__EVAL_ERROR__")[1].strip()
+            return {"error": error_msg}
+            
+        if "__EVAL_START__" in output and "__EVAL_END__" in output:
+            json_str = output.split("__EVAL_START__")[1].split("__EVAL_END__")[0].strip()
+            return json.loads(json_str)
+            
+        return {"error": "Failed to parse script output.", "raw_output": output}
+    except Exception as e:
+        return {"error": str(e)}
+
+def extract_result(result) -> tuple[int, str]:
+    """Extracts (exit_code, output) from either DummyExecutor or GkeCodeExecutor results."""
+    if hasattr(result, "exit_code"):
+        return result.exit_code, getattr(result, "output", "")
+        
+    if hasattr(result, "stdout"):
+        stdout = result.stdout
+        stderr = result.stderr
+        
+        # Handle string reprs of bytes
+        if isinstance(stdout, bytes):
+            stdout = stdout.decode("utf-8", errors="replace")
+        elif isinstance(stdout, str) and stdout.startswith("b'") and stdout.endswith("'"):
+            try:
+                import ast
+                stdout = ast.literal_eval(stdout).decode("utf-8", errors="replace")
+            except Exception:
+                pass
+                
+        if isinstance(stderr, bytes):
+            stderr = stderr.decode("utf-8", errors="replace")
+            
+        # GkeCodeExecutor wraps stderr bytes in a string message
+        if isinstance(stderr, str) and "Job failed. Logs:\nb'" in stderr:
+            try:
+                import ast
+                prefix = "Job failed. Logs:\n"
+                b_str = stderr[len(prefix):]
+                stderr = prefix + ast.literal_eval(b_str).decode("utf-8", errors="replace")
+            except Exception:
+                pass
+                
+        if stderr:
+            return 1, stderr
+        else:
+            return 0, stdout
+            
+    return -1, str(result)
+
+def check_sandbox() -> bool:
+    """Run a minimal script in the sandbox to verify it is working."""
+    executor = get_executor()
+    try:
+        from google.adk.code_executors.code_execution_utils import CodeExecutionInput
+        result = executor.execute_code(_get_mock_invocation_context(), CodeExecutionInput(code="print('ok')"))
+        exit_code, output = extract_result(result)
+        output = output.strip()
+        
+        is_ok = exit_code == 0 and output == "ok"
+        if not is_ok:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Sandbox check logic failed. Exit Code: {exit_code}, Output: {output}")
+            
+        return is_ok
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Sandbox check failed with exception: {e}")
+        return False
+
+def validate_script(script_content: str) -> dict:
+    """Deterministically check the script for syntax errors and correct structure."""
+    # Append code to verify calculate is defined
+    test_code = f"{script_content}\n\n"
+    test_code += "if 'calculate' not in locals() or not callable(locals()['calculate']):\n"
+    test_code += "    print('ERROR: calculate function is not defined')\n"
+    test_code += "    import sys\n"
+    test_code += "    sys.exit(1)\n"
+    test_code += "print('VALID')\n"
+    
+    executor = get_executor()
+    try:
+        from google.adk.code_executors.code_execution_utils import CodeExecutionInput
+        result = executor.execute_code(_get_mock_invocation_context(), CodeExecutionInput(code=test_code))
+        exit_code, output = extract_result(result)
+        
+        if exit_code != 0:
+            return {"passed": False, "error": output}
+        if "ERROR: calculate function is not defined" in output:
+            return {"passed": False, "error": "calculate function is not defined"}
+            
+        return {"passed": True}
+    except Exception as e:
+        return {"passed": False, "error": str(e)}

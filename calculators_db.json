@@ -1,0 +1,1525 @@
+{
+  "c1": {
+    "id": "c1",
+    "name": "C1",
+    "description": "",
+    "created_at": "2026-06-26T12:51:19.508711",
+    "updated_at": "2026-06-26T12:51:19.508715",
+    "status": "active",
+    "parameters": [],
+    "script": "",
+    "test_script": "",
+    "a2ui_schema": {},
+    "original_prompt": "",
+    "retry_count": 0,
+    "generation_model": ""
+  },
+  "c2": {
+    "id": "c2",
+    "name": "C2",
+    "description": "",
+    "created_at": "2026-06-26T12:51:19.508743",
+    "updated_at": "2026-06-26T12:51:19.508744",
+    "status": "active",
+    "parameters": [],
+    "script": "",
+    "test_script": "",
+    "a2ui_schema": {},
+    "original_prompt": "",
+    "retry_count": 0,
+    "generation_model": ""
+  },
+  "b4ffaeb5-a511-460e-b7f5-3313a9259bdf": {
+    "id": "b4ffaeb5-a511-460e-b7f5-3313a9259bdf",
+    "name": "Generated Calculator",
+    "description": "This tool calculates the ratio of sound pressure and sound intensity relative to the standard human hearing threshold of 0 dB based on a given decibel level.",
+    "created_at": "2026-06-26T13:00:53.180895",
+    "updated_at": "2026-06-26T13:00:53.180901",
+    "status": "active",
+    "parameters": [
+      {
+        "name": "db_level",
+        "kind": "input",
+        "data_type": "number",
+        "validation": {
+          "min_value": -20.0,
+          "max_value": 200.0,
+          "step": 0.1,
+          "required": true,
+          "pattern": null
+        },
+        "allowed_values": null,
+        "constant_value": null,
+        "constant_source": null
+      },
+      {
+        "name": "pressure_ratio",
+        "kind": "result",
+        "data_type": "number",
+        "validation": null,
+        "allowed_values": null,
+        "constant_value": null,
+        "constant_source": null
+      },
+      {
+        "name": "intensity_ratio",
+        "kind": "result",
+        "data_type": "number",
+        "validation": null,
+        "allowed_values": null,
+        "constant_value": null,
+        "constant_source": null
+      }
+    ],
+    "script": "def calculate(inputs: dict) -> dict:\n    \"\"\"\n    Converts loudness levels in decibels (dB) into their corresponding\n    sound pressure and sound intensity ratios relative to the standard\n    human hearing threshold (0 dB).\n    \"\"\"\n    error_payload = {'error': 'Invalid Input: dB level must be a number between -20 and 200.'}\n\n    try:\n        # Aggressively cast input to float as per instructions\n        db_level = float(inputs['db_level'])\n    except (KeyError, ValueError, TypeError):\n        return error_payload\n\n    # Validate the range of the input\n    if not -20.0 <= db_level <= 200.0:\n        return error_payload\n\n    # Calculate sound pressure ratio relative to the hearing threshold\n    # Formula: pressure_ratio = 10 ** (db_level / 20.0)\n    pressure_ratio = 10 ** (db_level / 20.0)\n\n    # Calculate sound intensity ratio relative to the hearing threshold\n    # Formula: intensity_ratio = 10 ** (db_level / 10.0)\n    intensity_ratio = 10 ** (db_level / 10.0)\n\n    # Return the results, rounded to 4 decimal places\n    return {\n        'pressure_ratio': round(pressure_ratio, 4),\n        'intensity_ratio': round(intensity_ratio, 4)\n    }\n",
+    "test_script": "",
+    "a2ui_schema": {
+      "status": "RETRY"
+    },
+    "original_prompt": "",
+    "retry_count": 0,
+    "generation_model": ""
+  },
+  "e03fadc0-22a3-43e5-a71a-9a92700b1e41": {
+    "id": "e03fadc0-22a3-43e5-a71a-9a92700b1e41",
+    "name": "Generated Calculator",
+    "description": "This tool calculates the ratio of sound pressure and sound intensity relative to the standard human hearing threshold of 0 dB based on a given decibel level.",
+    "created_at": "2026-06-26T13:01:36.567509",
+    "updated_at": "2026-06-26T13:01:36.567514",
+    "status": "active",
+    "parameters": [
+      {
+        "name": "db_level",
+        "kind": "input",
+        "data_type": "number",
+        "validation": {
+          "min_value": -20.0,
+          "max_value": 200.0,
+          "step": 0.1,
+          "required": true,
+          "pattern": null
+        },
+        "allowed_values": null,
+        "constant_value": null,
+        "constant_source": null
+      },
+      {
+        "name": "pressure_ratio",
+        "kind": "result",
+        "data_type": "number",
+        "validation": null,
+        "allowed_values": null,
+        "constant_value": null,
+        "constant_source": null
+      },
+      {
+        "name": "intensity_ratio",
+        "kind": "result",
+        "data_type": "number",
+        "validation": null,
+        "allowed_values": null,
+        "constant_value": null,
+        "constant_source": null
+      }
+    ],
+    "script": "def calculate(inputs: dict) -> dict:\n    \"\"\"\n    Converts loudness levels in decibels (dB) into their corresponding\n    sound pressure and sound intensity ratios relative to the standard\n    human hearing threshold (0 dB).\n    \"\"\"\n    error_payload = {'error': 'Invalid Input: dB level must be a number between -20 and 200.'}\n\n    try:\n        # Aggressively cast input to float as per instructions\n        db_level = float(inputs['db_level'])\n    except (KeyError, ValueError, TypeError):\n        return error_payload\n\n    # Validate the range of the input\n    if not -20.0 <= db_level <= 200.0:\n        return error_payload\n\n    # Calculate sound pressure ratio relative to the hearing threshold\n    # Formula: pressure_ratio = 10 ** (db_level / 20.0)\n    pressure_ratio = 10 ** (db_level / 20.0)\n\n    # Calculate sound intensity ratio relative to the hearing threshold\n    # Formula: intensity_ratio = 10 ** (db_level / 10.0)\n    intensity_ratio = 10 ** (db_level / 10.0)\n\n    # Return the results, rounded to 4 decimal places\n    return {\n        'pressure_ratio': round(pressure_ratio, 4),\n        'intensity_ratio': round(intensity_ratio, 4)\n    }\n",
+    "test_script": "",
+    "a2ui_schema": [
+      {
+        "version": "v0.9",
+        "updateComponents": {
+          "surfaceId": "calculator-surface",
+          "components": [
+            {
+              "id": "root",
+              "component": "Column",
+              "children": [
+                "main-card"
+              ]
+            },
+            {
+              "id": "main-card",
+              "component": "Card",
+              "child": "main-column"
+            },
+            {
+              "id": "main-column",
+              "component": "Column",
+              "children": [
+                "title-text",
+                "description-text",
+                "db-level-input",
+                "db-level-slider",
+                "calculate-button",
+                "results-card"
+              ]
+            },
+            {
+              "id": "title-text",
+              "component": "Text",
+              "variant": "h4",
+              "text": "Decibel to Hearing Threshold Ratio Converter"
+            },
+            {
+              "id": "description-text",
+              "component": "Text",
+              "variant": "body",
+              "text": "This tool calculates the ratio of sound pressure and sound intensity relative to the standard human hearing threshold of 0 dB based on a given decibel level."
+            },
+            {
+              "id": "db-level-input",
+              "component": "TextField",
+              "label": "Decibel Level (dB)",
+              "variant": "number",
+              "value": {
+                "path": "/db_level"
+              },
+              "checks": [
+                {
+                  "condition": {
+                    "call": "required",
+                    "args": {
+                      "value": {
+                        "path": "/db_level"
+                      }
+                    }
+                  },
+                  "message": "Decibel level is required."
+                },
+                {
+                  "condition": {
+                    "call": "numeric",
+                    "args": {
+                      "value": {
+                        "path": "/db_level"
+                      },
+                      "min": -20.0,
+                      "max": 200.0
+                    }
+                  },
+                  "message": "dB level must be a number between -20 and 200."
+                }
+              ]
+            },
+            {
+              "id": "db-level-slider",
+              "component": "Slider",
+              "min": -20.0,
+              "max": 200.0,
+              "value": {
+                "path": "/db_level"
+              }
+            },
+            {
+              "id": "calculate-button",
+              "component": "Button",
+              "variant": "primary",
+              "child": "calculate-button-text",
+              "action": {
+                "event": {
+                  "name": "calculate",
+                  "context": {
+                    "db_level": {
+                      "path": "/db_level"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "id": "calculate-button-text",
+              "component": "Text",
+              "text": "Calculate"
+            },
+            {
+              "id": "results-card",
+              "component": "Card",
+              "child": "results-column"
+            },
+            {
+              "id": "results-column",
+              "component": "Column",
+              "children": [
+                "pressure-ratio-row",
+                "intensity-ratio-row"
+              ]
+            },
+            {
+              "id": "pressure-ratio-row",
+              "component": "Row",
+              "justify": "spaceBetween",
+              "children": [
+                "pressure-ratio-label",
+                "pressure-ratio-value"
+              ]
+            },
+            {
+              "id": "pressure-ratio-label",
+              "component": "Text",
+              "text": "Sound Pressure Ratio"
+            },
+            {
+              "id": "pressure-ratio-value",
+              "component": "Text",
+              "text": {
+                "path": "/pressure_ratio"
+              }
+            },
+            {
+              "id": "intensity-ratio-row",
+              "component": "Row",
+              "justify": "spaceBetween",
+              "children": [
+                "intensity-ratio-label",
+                "intensity-ratio-value"
+              ]
+            },
+            {
+              "id": "intensity-ratio-label",
+              "component": "Text",
+              "text": "Sound Intensity Ratio"
+            },
+            {
+              "id": "intensity-ratio-value",
+              "component": "Text",
+              "text": {
+                "path": "/intensity_ratio"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "version": "v0.9",
+        "updateDataModel": {
+          "surfaceId": "calculator-surface",
+          "value": {
+            "db_level": 0.0,
+            "pressure_ratio": null,
+            "intensity_ratio": null
+          }
+        }
+      }
+    ],
+    "original_prompt": "",
+    "retry_count": 0,
+    "generation_model": ""
+  },
+  "dfc15d78-3875-468c-a600-aab24ba43393": {
+    "id": "dfc15d78-3875-468c-a600-aab24ba43393",
+    "name": "Generated Calculator",
+    "description": "This calculator estimates the daily feeding range for your adult cat in both grams and cups, based on your cat's specific body weight and the official Farmina feeding guidelines.",
+    "created_at": "2026-06-26T13:22:27.446815",
+    "updated_at": "2026-06-26T13:22:27.446821",
+    "status": "active",
+    "parameters": [
+      {
+        "name": "weight",
+        "kind": "input",
+        "data_type": "number",
+        "validation": {
+          "min_value": 1.0,
+          "max_value": 10.0,
+          "step": null,
+          "required": true,
+          "pattern": null
+        },
+        "allowed_values": null,
+        "constant_value": null,
+        "constant_source": null
+      },
+      {
+        "name": "weight_unit",
+        "kind": "choice",
+        "data_type": "string",
+        "validation": null,
+        "allowed_values": [
+          "kg",
+          "lb"
+        ],
+        "constant_value": null,
+        "constant_source": null
+      },
+      {
+        "name": "min_grams",
+        "kind": "result",
+        "data_type": "number",
+        "validation": null,
+        "allowed_values": null,
+        "constant_value": null,
+        "constant_source": null
+      },
+      {
+        "name": "max_grams",
+        "kind": "result",
+        "data_type": "number",
+        "validation": null,
+        "allowed_values": null,
+        "constant_value": null,
+        "constant_source": null
+      },
+      {
+        "name": "min_cups",
+        "kind": "result",
+        "data_type": "number",
+        "validation": null,
+        "allowed_values": null,
+        "constant_value": null,
+        "constant_source": null
+      },
+      {
+        "name": "max_cups",
+        "kind": "result",
+        "data_type": "number",
+        "validation": null,
+        "allowed_values": null,
+        "constant_value": null,
+        "constant_source": null
+      }
+    ],
+    "script": "def calculate(inputs: dict) -> dict:\n    \"\"\"\n    Calculates the recommended daily food quantity for an adult cat based on its weight.\n    \"\"\"\n\n    # Reference data tables from the Farmina packaging feeding guide\n    WEIGHTS_KG_REF = [2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5]\n    MIN_GRAMS_REF = [22, 25, 28, 32, 35, 38, 40, 42, 45, 48]\n    MAX_GRAMS_REF = [36, 42, 48, 52, 58, 62, 66, 70, 75, 80]\n    MIN_CUPS_REF = [0.25, 0.25, 0.33, 0.33, 0.33, 0.33, 0.50, 0.50, 0.50, 0.50]\n    MAX_CUPS_REF = [0.33, 0.50, 0.50, 0.50, 0.66, 0.66, 0.66, 0.75, 0.75, 0.75]\n\n    def _interpolate(x, x_points, y_points):\n        \"\"\"Performs linear interpolation or extrapolation based on reference points.\"\"\"\n        # Case 1: Extrapolation for weights below the defined range [1.0, 2.0)\n        if x < x_points[0]:\n            x1, x2 = x_points[0], x_points[1]\n            y1, y2 = y_points[0], y_points[1]\n        # Case 2: Extrapolation for weights above the defined range (6.5, 10.0]\n        elif x > x_points[-1]:\n            x1, x2 = x_points[-2], x_points[-1]\n            y1, y2 = y_points[-2], y_points[-1]\n        # Case 3: Interpolation for weights within the defined range [2.0, 6.5]\n        else:\n            # Handle exact match for the last point, which the loop would miss\n            if x == x_points[-1]:\n                return float(y_points[-1])\n            # Find the correct interval for interpolation\n            for i in range(len(x_points) - 1):\n                if x_points[i] <= x < x_points[i+1]:\n                    x1, x2 = x_points[i], x_points[i+1]\n                    y1, y2 = y_points[i], y_points[i+1]\n                    break\n            else:\n                # This part should not be reached with valid logic\n                return {'error': 'Internal calculation error: Could not find interpolation interval.'}\n\n        # Linear interpolation/extrapolation formula\n        # Avoid division by zero if two consecutive x-points are the same\n        if (x2 - x1) == 0:\n            return float(y1)\n\n        y = y1 + (x - x1) * (y2 - y1) / (x2 - x1)\n        return y\n\n    try:\n        weight = float(inputs['weight'])\n        weight_unit = inputs['weight_unit']\n    except (KeyError, TypeError, ValueError):\n        return {'error': 'Invalid input format. Please provide a numeric weight and a weight unit.'}\n\n    # Validate the selected weight unit\n    if weight_unit not in ['kg', 'lb']:\n        return {'error': \"Invalid Input: Unit must be 'kg' or 'lb'\"}\n\n    # 1. Convert weight to kilograms if 'weight_unit' is 'lb'\n    if weight_unit == 'lb':\n        weight_kg = weight * 0.45359237\n    else:\n        weight_kg = weight\n\n    # Validate the weight in kg against the allowed range [1.0, 10.0]\n    if not (1.0 <= weight_kg <= 10.0):\n        return {'error': 'Invalid Input: Weight must be between 1.0 and 10.0 kg'}\n\n    # 3 & 4. Calculate all metrics using the interpolation/extrapolation helper\n    min_grams = _interpolate(weight_kg, WEIGHTS_KG_REF, MIN_GRAMS_REF)\n    max_grams = _interpolate(weight_kg, WEIGHTS_KG_REF, MAX_GRAMS_REF)\n    min_cups = _interpolate(weight_kg, WEIGHTS_KG_REF, MIN_CUPS_REF)\n    max_cups = _interpolate(weight_kg, WEIGHTS_KG_REF, MAX_CUPS_REF)\n\n    # 5. Round final grams to 1 decimal place and cups to 2 decimal places\n    results = {\n        'min_grams': round(min_grams, 1),\n        'max_grams': round(max_grams, 1),\n        'min_cups': round(min_cups, 2),\n        'max_cups': round(max_cups, 2)\n    }\n\n    return results\n",
+    "test_script": "",
+    "a2ui_schema": [
+      {
+        "version": "v0.9",
+        "updateComponents": {
+          "surfaceId": "calculator-surface",
+          "components": [
+            {
+              "id": "root",
+              "component": "Column",
+              "children": [
+                "main-card"
+              ]
+            },
+            {
+              "id": "main-card",
+              "component": "Card",
+              "child": "main-column"
+            },
+            {
+              "id": "main-column",
+              "component": "Column",
+              "children": [
+                "title-text",
+                "description-text",
+                "weight-row",
+                "weight-slider",
+                "calculate-button",
+                "results-card"
+              ]
+            },
+            {
+              "id": "title-text",
+              "component": "Text",
+              "variant": "h4",
+              "text": "Farmina Adult Cat Feeding Calculator"
+            },
+            {
+              "id": "description-text",
+              "component": "Text",
+              "variant": "body",
+              "text": "This calculator estimates the daily feeding range for your adult cat in both grams and cups, based on your cat's specific body weight and the official Farmina feeding guidelines."
+            },
+            {
+              "id": "weight-row",
+              "component": "Row",
+              "align": "end",
+              "children": [
+                "weight-input",
+                "weight-unit-picker"
+              ]
+            },
+            {
+              "id": "weight-input",
+              "component": "TextField",
+              "label": "Cat's Weight",
+              "variant": "number",
+              "value": {
+                "path": "/weight"
+              },
+              "weight": 1,
+              "checks": [
+                {
+                  "condition": {
+                    "call": "required",
+                    "args": {
+                      "value": {
+                        "path": "/weight"
+                      }
+                    }
+                  },
+                  "message": "Weight is required."
+                },
+                {
+                  "condition": {
+                    "call": "numeric",
+                    "args": {
+                      "value": {
+                        "path": "/weight"
+                      },
+                      "min": 1.0,
+                      "max": 10.0
+                    }
+                  },
+                  "message": "Weight must be between 1.0 and 10.0."
+                }
+              ]
+            },
+            {
+              "id": "weight-unit-picker",
+              "component": "ChoicePicker",
+              "label": "",
+              "variant": "mutuallyExclusive",
+              "displayStyle": "chips",
+              "value": {
+                "path": "/weight_unit"
+              },
+              "options": [
+                {
+                  "label": "kg",
+                  "value": "kg"
+                },
+                {
+                  "label": "lb",
+                  "value": "lb"
+                }
+              ]
+            },
+            {
+              "id": "weight-slider",
+              "component": "Slider",
+              "min": 1.0,
+              "max": 10.0,
+              "value": {
+                "path": "/weight"
+              }
+            },
+            {
+              "id": "calculate-button",
+              "component": "Button",
+              "variant": "primary",
+              "child": "calculate-button-text",
+              "action": {
+                "event": {
+                  "name": "calculate",
+                  "context": {
+                    "weight": {
+                      "path": "/weight"
+                    },
+                    "weight_unit": {
+                      "path": "/weight_unit"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "id": "calculate-button-text",
+              "component": "Text",
+              "text": "Calculate"
+            },
+            {
+              "id": "results-card",
+              "component": "Card",
+              "child": "results-column"
+            },
+            {
+              "id": "results-column",
+              "component": "Column",
+              "children": [
+                "results-title",
+                "grams-row",
+                "cups-row"
+              ]
+            },
+            {
+              "id": "results-title",
+              "component": "Text",
+              "variant": "h5",
+              "text": "Recommended Daily Quantity"
+            },
+            {
+              "id": "grams-row",
+              "component": "Row",
+              "justify": "spaceBetween",
+              "children": [
+                "grams-label",
+                "grams-value-row"
+              ]
+            },
+            {
+              "id": "grams-label",
+              "component": "Text",
+              "text": "Grams / day"
+            },
+            {
+              "id": "grams-value-row",
+              "component": "Row",
+              "align": "center",
+              "children": [
+                "min-grams-value",
+                "grams-separator",
+                "max-grams-value"
+              ]
+            },
+            {
+              "id": "min-grams-value",
+              "component": "Text",
+              "text": {
+                "path": "/min_grams"
+              }
+            },
+            {
+              "id": "grams-separator",
+              "component": "Text",
+              "text": " - "
+            },
+            {
+              "id": "max-grams-value",
+              "component": "Text",
+              "text": {
+                "path": "/max_grams"
+              }
+            },
+            {
+              "id": "cups-row",
+              "component": "Row",
+              "justify": "spaceBetween",
+              "children": [
+                "cups-label",
+                "cups-value-row"
+              ]
+            },
+            {
+              "id": "cups-label",
+              "component": "Text",
+              "text": "Cups / day"
+            },
+            {
+              "id": "cups-value-row",
+              "component": "Row",
+              "align": "center",
+              "children": [
+                "min-cups-value",
+                "cups-separator",
+                "max-cups-value"
+              ]
+            },
+            {
+              "id": "min-cups-value",
+              "component": "Text",
+              "text": {
+                "path": "/min_cups"
+              }
+            },
+            {
+              "id": "cups-separator",
+              "component": "Text",
+              "text": " - "
+            },
+            {
+              "id": "max-cups-value",
+              "component": "Text",
+              "text": {
+                "path": "/max_cups"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "version": "v0.9",
+        "updateDataModel": {
+          "surfaceId": "calculator-surface",
+          "value": {
+            "weight": 4.0,
+            "weight_unit": "kg",
+            "min_grams": null,
+            "max_grams": null,
+            "min_cups": null,
+            "max_cups": null
+          }
+        }
+      }
+    ],
+    "original_prompt": "",
+    "retry_count": 0,
+    "generation_model": ""
+  },
+  "bcb18474-aaf3-4d05-bf70-e51d663b85d7": {
+    "id": "bcb18474-aaf3-4d05-bf70-e51d663b85d7",
+    "name": "Generated Calculator",
+    "description": "This calculator estimates the daily feeding range for your adult cat in both grams and cups, based on your cat's specific body weight and the official Farmina feeding guidelines.",
+    "created_at": "2026-06-26T13:22:30.308261",
+    "updated_at": "2026-06-26T13:22:30.308266",
+    "status": "active",
+    "parameters": [
+      {
+        "name": "weight",
+        "kind": "input",
+        "data_type": "number",
+        "validation": {
+          "min_value": 1.0,
+          "max_value": 10.0,
+          "step": null,
+          "required": true,
+          "pattern": null
+        },
+        "allowed_values": null,
+        "constant_value": null,
+        "constant_source": null
+      },
+      {
+        "name": "weight_unit",
+        "kind": "choice",
+        "data_type": "string",
+        "validation": null,
+        "allowed_values": [
+          "kg",
+          "lb"
+        ],
+        "constant_value": null,
+        "constant_source": null
+      },
+      {
+        "name": "min_grams",
+        "kind": "result",
+        "data_type": "number",
+        "validation": null,
+        "allowed_values": null,
+        "constant_value": null,
+        "constant_source": null
+      },
+      {
+        "name": "max_grams",
+        "kind": "result",
+        "data_type": "number",
+        "validation": null,
+        "allowed_values": null,
+        "constant_value": null,
+        "constant_source": null
+      },
+      {
+        "name": "min_cups",
+        "kind": "result",
+        "data_type": "number",
+        "validation": null,
+        "allowed_values": null,
+        "constant_value": null,
+        "constant_source": null
+      },
+      {
+        "name": "max_cups",
+        "kind": "result",
+        "data_type": "number",
+        "validation": null,
+        "allowed_values": null,
+        "constant_value": null,
+        "constant_source": null
+      }
+    ],
+    "script": "def calculate(inputs: dict) -> dict:\n    \"\"\"\n    Calculates the recommended daily food quantity (in grams and cups) for an adult cat based on its weight, utilizing the feeding guidelines from Farmina packaging with precise linear interpolation.\n    \"\"\"\n\n    # 2. Define reference tables from packaging\n    WEIGHTS_KG = [2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5]\n    MIN_GRAMS = [22, 25, 28, 32, 35, 38, 40, 42, 45, 48]\n    MAX_GRAMS = [36, 42, 48, 52, 58, 62, 66, 70, 75, 80]\n    MIN_CUPS = [0.25, 0.25, 0.33, 0.33, 0.33, 0.33, 0.50, 0.50, 0.50, 0.50]\n    MAX_CUPS = [0.33, 0.50, 0.50, 0.50, 0.66, 0.66, 0.66, 0.75, 0.75, 0.75]\n    LB_TO_KG = 0.45359237\n\n    # --- Input Extraction and Validation ---\n    weight = inputs.get('weight')\n    weight_unit = inputs.get('weight_unit')\n\n    if weight is None or weight_unit is None:\n        return {'error': 'Missing required input: weight and weight_unit must be provided.'}\n\n    try:\n        weight_val = float(weight)\n    except (ValueError, TypeError):\n        return {'error': 'Invalid Input: Weight must be a number.'}\n\n    if not isinstance(weight_unit, str) or weight_unit not in ['kg', 'lb']:\n        return {'error': \"Invalid Input: weight_unit must be either 'kg' or 'lb'.\"}\n\n    # 1. Convert weight to kilograms if 'weight_unit' is 'lb'\n    weight_kg = weight_val * LB_TO_KG if weight_unit == 'lb' else weight_val\n\n    # Validate weight range post-conversion\n    if not (1.0 <= weight_kg <= 10.0):\n        return {'error': 'Invalid Input: Weight must be between 1.0 and 10.0 kg (or equivalent in lb).'}\n\n    # --- Interpolation/Extrapolation Function ---\n    def _interpolate(x_val, x_points, y_points):\n        # 3. If input weight in kg is outside [2.0, 6.5], perform linear extrapolation\n        if x_val < x_points[0]:\n            x1, x2 = x_points[0], x_points[1]\n            y1, y2 = y_points[0], y_points[1]\n        elif x_val > x_points[-1]:\n            x1, x2 = x_points[-2], x_points[-1]\n            y1, y2 = y_points[-2], y_points[-1]\n        # 4. If within [2.0, 6.5], find the bounding interval and apply standard linear interpolation\n        else:\n            for i in range(len(x_points) - 1):\n                if x_points[i] <= x_val <= x_points[i+1]:\n                    x1, x2 = x_points[i], x_points[i+1]\n                    y1, y2 = y_points[i], y_points[i+1]\n                    break\n            else: # Exact match on the last point\n                return float(y_points[-1])\n        \n        if x1 == x2: # Avoid division by zero\n            return float(y1)\n        \n        # Linear interpolation/extrapolation formula\n        return y1 + (x_val - x1) * (y2 - y1) / (x2 - x1)\n\n    # --- Calculation ---\n    min_grams = _interpolate(weight_kg, WEIGHTS_KG, MIN_GRAMS)\n    max_grams = _interpolate(weight_kg, WEIGHTS_KG, MAX_GRAMS)\n    min_cups = _interpolate(weight_kg, WEIGHTS_KG, MIN_CUPS)\n    max_cups = _interpolate(weight_kg, WEIGHTS_KG, MAX_CUPS)\n\n    # 5. Round final grams to 1 decimal place and cups to 2 decimal places\n    return {\n        'min_grams': round(min_grams, 1),\n        'max_grams': round(max_grams, 1),\n        'min_cups': round(min_cups, 2),\n        'max_cups': round(max_cups, 2)\n    }\n",
+    "test_script": "",
+    "a2ui_schema": [
+      {
+        "version": "v0.9",
+        "updateComponents": {
+          "surfaceId": "calculator-surface",
+          "components": [
+            {
+              "id": "root",
+              "component": "Column",
+              "children": [
+                "main-card"
+              ]
+            },
+            {
+              "id": "main-card",
+              "component": "Card",
+              "child": "main-column"
+            },
+            {
+              "id": "main-column",
+              "component": "Column",
+              "children": [
+                "title-text",
+                "description-text",
+                "weight-row",
+                "weight-slider",
+                "calculate-button",
+                "results-card"
+              ]
+            },
+            {
+              "id": "title-text",
+              "component": "Text",
+              "variant": "h4",
+              "text": "Farmina Adult Cat Feeding Calculator"
+            },
+            {
+              "id": "description-text",
+              "component": "Text",
+              "variant": "body",
+              "text": "This calculator estimates the daily feeding range for your adult cat in both grams and cups, based on your cat's specific body weight and the official Farmina feeding guidelines."
+            },
+            {
+              "id": "weight-row",
+              "component": "Row",
+              "align": "end",
+              "children": [
+                "weight-input",
+                "weight-unit-picker"
+              ]
+            },
+            {
+              "id": "weight-input",
+              "component": "TextField",
+              "label": "Cat's Weight",
+              "variant": "number",
+              "value": {
+                "path": "/weight"
+              },
+              "weight": 1,
+              "checks": [
+                {
+                  "condition": {
+                    "call": "required",
+                    "args": {
+                      "value": {
+                        "path": "/weight"
+                      }
+                    }
+                  },
+                  "message": "Weight is required."
+                },
+                {
+                  "condition": {
+                    "call": "numeric",
+                    "args": {
+                      "value": {
+                        "path": "/weight"
+                      },
+                      "min": 1.0,
+                      "max": 10.0
+                    }
+                  },
+                  "message": "Weight must be between 1.0 and 10.0."
+                }
+              ]
+            },
+            {
+              "id": "weight-unit-picker",
+              "component": "ChoicePicker",
+              "label": "",
+              "variant": "mutuallyExclusive",
+              "displayStyle": "chips",
+              "value": {
+                "path": "/weight_unit"
+              },
+              "options": [
+                {
+                  "label": "kg",
+                  "value": "kg"
+                },
+                {
+                  "label": "lb",
+                  "value": "lb"
+                }
+              ]
+            },
+            {
+              "id": "weight-slider",
+              "component": "Slider",
+              "min": 1.0,
+              "max": 10.0,
+              "value": {
+                "path": "/weight"
+              }
+            },
+            {
+              "id": "calculate-button",
+              "component": "Button",
+              "variant": "primary",
+              "child": "calculate-button-text",
+              "action": {
+                "event": {
+                  "name": "calculate",
+                  "context": {
+                    "weight": {
+                      "path": "/weight"
+                    },
+                    "weight_unit": {
+                      "path": "/weight_unit"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "id": "calculate-button-text",
+              "component": "Text",
+              "text": "Calculate"
+            },
+            {
+              "id": "results-card",
+              "component": "Card",
+              "child": "results-column"
+            },
+            {
+              "id": "results-column",
+              "component": "Column",
+              "children": [
+                "results-title",
+                "grams-row",
+                "cups-row"
+              ]
+            },
+            {
+              "id": "results-title",
+              "component": "Text",
+              "variant": "h5",
+              "text": "Recommended Daily Quantity"
+            },
+            {
+              "id": "grams-row",
+              "component": "Row",
+              "justify": "spaceBetween",
+              "children": [
+                "grams-label",
+                "grams-value-row"
+              ]
+            },
+            {
+              "id": "grams-label",
+              "component": "Text",
+              "text": "Grams / day"
+            },
+            {
+              "id": "grams-value-row",
+              "component": "Row",
+              "align": "center",
+              "children": [
+                "min-grams-value",
+                "grams-separator",
+                "max-grams-value"
+              ]
+            },
+            {
+              "id": "min-grams-value",
+              "component": "Text",
+              "text": {
+                "path": "/min_grams"
+              }
+            },
+            {
+              "id": "grams-separator",
+              "component": "Text",
+              "text": " - "
+            },
+            {
+              "id": "max-grams-value",
+              "component": "Text",
+              "text": {
+                "path": "/max_grams"
+              }
+            },
+            {
+              "id": "cups-row",
+              "component": "Row",
+              "justify": "spaceBetween",
+              "children": [
+                "cups-label",
+                "cups-value-row"
+              ]
+            },
+            {
+              "id": "cups-label",
+              "component": "Text",
+              "text": "Cups / day"
+            },
+            {
+              "id": "cups-value-row",
+              "component": "Row",
+              "align": "center",
+              "children": [
+                "min-cups-value",
+                "cups-separator",
+                "max-cups-value"
+              ]
+            },
+            {
+              "id": "min-cups-value",
+              "component": "Text",
+              "text": {
+                "path": "/min_cups"
+              }
+            },
+            {
+              "id": "cups-separator",
+              "component": "Text",
+              "text": " - "
+            },
+            {
+              "id": "max-cups-value",
+              "component": "Text",
+              "text": {
+                "path": "/max_cups"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "version": "v0.9",
+        "updateDataModel": {
+          "surfaceId": "calculator-surface",
+          "value": {
+            "weight": 4.0,
+            "weight_unit": "kg",
+            "min_grams": null,
+            "max_grams": null,
+            "min_cups": null,
+            "max_cups": null
+          }
+        }
+      }
+    ],
+    "original_prompt": "",
+    "retry_count": 0,
+    "generation_model": ""
+  },
+  "2e9e7c75-bbb5-474c-afd8-e1db9528b869": {
+    "id": "2e9e7c75-bbb5-474c-afd8-e1db9528b869",
+    "name": "Generated Calculator",
+    "description": "This calculator estimates the daily recommended amount of Farmina Adult Cat food for your pet in grams, cups, and kilocalories based on their body weight.",
+    "created_at": "2026-06-26T14:00:40.280220",
+    "updated_at": "2026-06-26T14:00:40.280225",
+    "status": "active",
+    "parameters": [
+      {
+        "name": "weight",
+        "kind": "input",
+        "data_type": "number",
+        "validation": {
+          "min_value": 0.1,
+          "max_value": 50.0,
+          "step": 0.1,
+          "required": true,
+          "pattern": null
+        },
+        "allowed_values": null,
+        "constant_value": null,
+        "constant_source": null
+      },
+      {
+        "name": "weight_unit",
+        "kind": "choice",
+        "data_type": "string",
+        "validation": null,
+        "allowed_values": [
+          "kg",
+          "lb"
+        ],
+        "constant_value": null,
+        "constant_source": null
+      },
+      {
+        "name": "recommended_min_g",
+        "kind": "result",
+        "data_type": "number",
+        "validation": null,
+        "allowed_values": null,
+        "constant_value": null,
+        "constant_source": null
+      },
+      {
+        "name": "recommended_max_g",
+        "kind": "result",
+        "data_type": "number",
+        "validation": null,
+        "allowed_values": null,
+        "constant_value": null,
+        "constant_source": null
+      },
+      {
+        "name": "recommended_min_cups",
+        "kind": "result",
+        "data_type": "number",
+        "validation": null,
+        "allowed_values": null,
+        "constant_value": null,
+        "constant_source": null
+      },
+      {
+        "name": "recommended_max_cups",
+        "kind": "result",
+        "data_type": "number",
+        "validation": null,
+        "allowed_values": null,
+        "constant_value": null,
+        "constant_source": null
+      },
+      {
+        "name": "estimated_min_kcal",
+        "kind": "result",
+        "data_type": "number",
+        "validation": null,
+        "allowed_values": null,
+        "constant_value": null,
+        "constant_source": null
+      },
+      {
+        "name": "estimated_max_kcal",
+        "kind": "result",
+        "data_type": "number",
+        "validation": null,
+        "allowed_values": null,
+        "constant_value": null,
+        "constant_source": null
+      }
+    ],
+    "script": "def calculate(inputs: dict) -> dict:\n    \"\"\"\n    Calculates the daily recommended food quantity for an adult cat based on its weight.\n    \"\"\"\n\n    try:\n        weight = float(inputs['weight'])\n        weight_unit = inputs['weight_unit']\n        if weight <= 0:\n            return {'error': 'Invalid Input: Weight must be greater than 0'}\n    except (KeyError, TypeError, ValueError):\n        return {'error': 'Invalid Input: Weight must be greater than 0'}\n\n    # --- Constants and Data Table from the feeding guide ---\n    LB_TO_KG = 0.45359237\n    KCAL_PER_GRAM = 4.165\n\n    kg_coords = [2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5]\n    min_g_coords = [22.0, 25.0, 28.0, 32.0, 35.0, 38.0, 40.0, 42.0, 45.0, 48.0]\n    max_g_coords = [36.0, 42.0, 48.0, 52.0, 58.0, 62.0, 66.0, 70.0, 75.0, 80.0]\n    min_cups_coords = [0.25, 0.25, 0.33, 0.33, 0.33, 0.33, 0.50, 0.50, 0.50, 0.50]\n    max_cups_coords = [0.33, 0.50, 0.50, 0.50, 0.66, 0.66, 0.66, 0.75, 0.75, 0.75]\n\n    def _interpolate(x_target, x_points, y_points):\n        \"\"\"Performs 1D linear interpolation or extrapolation.\"\"\"\n        # Case 1: Extrapolation below the defined range\n        if x_target < x_points[0]:\n            i = 0\n        # Case 2: Extrapolation above the defined range\n        elif x_target > x_points[-1]:\n            i = len(x_points) - 2\n        # Case 3: Interpolation within the range\n        else:\n            # Find the interval for interpolation\n            for idx in range(len(x_points) - 1):\n                if x_points[idx] <= x_target <= x_points[idx + 1]:\n                    i = idx\n                    break\n\n        x1, x2 = x_points[i], x_points[i+1]\n        y1, y2 = y_points[i], y_points[i+1]\n\n        # Avoid division by zero if x-coordinates are identical\n        if x1 == x2:\n            return y1\n        \n        # Standard linear interpolation/extrapolation formula\n        y_target = y1 + (x_target - x1) * (y2 - y1) / (x2 - x1)\n        \n        # As per requirements, clamp any negative result to 0\n        return max(0.0, y_target)\n\n    # 1. Convert input weight to kilograms if necessary\n    target_kg = weight * LB_TO_KG if weight_unit == 'lb' else weight\n\n    # 3. Perform interpolation/extrapolation for each quantity\n    recommended_min_g = _interpolate(target_kg, kg_coords, min_g_coords)\n    recommended_max_g = _interpolate(target_kg, kg_coords, max_g_coords)\n    recommended_min_cups = _interpolate(target_kg, kg_coords, min_cups_coords)\n    recommended_max_cups = _interpolate(target_kg, kg_coords, max_cups_coords)\n\n    # 4. Calculate calorie estimations\n    estimated_min_kcal = recommended_min_g * KCAL_PER_GRAM\n    estimated_max_kcal = recommended_max_g * KCAL_PER_GRAM\n\n    # 5. Round all output fields to 2 decimal places and return\n    return {\n        'recommended_min_g': round(recommended_min_g, 2),\n        'recommended_max_g': round(recommended_max_g, 2),\n        'recommended_min_cups': round(recommended_min_cups, 2),\n        'recommended_max_cups': round(recommended_max_cups, 2),\n        'estimated_min_kcal': round(estimated_min_kcal, 2),\n        'estimated_max_kcal': round(estimated_max_kcal, 2)\n    }",
+    "test_script": "",
+    "a2ui_schema": {
+      "status": "RETRY"
+    },
+    "original_prompt": "",
+    "retry_count": 0,
+    "generation_model": ""
+  },
+  "563ca6ff-773c-4d38-a3bd-93412839a3c6": {
+    "id": "563ca6ff-773c-4d38-a3bd-93412839a3c6",
+    "name": "Generated Calculator",
+    "description": "This calculator estimates the daily recommended amount of Farmina Adult Cat food for your pet in grams, cups, and kilocalories based on their body weight.",
+    "created_at": "2026-06-26T14:02:09.632974",
+    "updated_at": "2026-06-26T14:02:09.632979",
+    "status": "active",
+    "parameters": [
+      {
+        "name": "weight",
+        "kind": "input",
+        "data_type": "number",
+        "validation": {
+          "min_value": 0.1,
+          "max_value": 50.0,
+          "step": 0.1,
+          "required": true,
+          "pattern": null
+        },
+        "allowed_values": null,
+        "constant_value": null,
+        "constant_source": null
+      },
+      {
+        "name": "weight_unit",
+        "kind": "choice",
+        "data_type": "string",
+        "validation": null,
+        "allowed_values": [
+          "kg",
+          "lb"
+        ],
+        "constant_value": null,
+        "constant_source": null
+      },
+      {
+        "name": "recommended_min_g",
+        "kind": "result",
+        "data_type": "number",
+        "validation": null,
+        "allowed_values": null,
+        "constant_value": null,
+        "constant_source": null
+      },
+      {
+        "name": "recommended_max_g",
+        "kind": "result",
+        "data_type": "number",
+        "validation": null,
+        "allowed_values": null,
+        "constant_value": null,
+        "constant_source": null
+      },
+      {
+        "name": "recommended_min_cups",
+        "kind": "result",
+        "data_type": "number",
+        "validation": null,
+        "allowed_values": null,
+        "constant_value": null,
+        "constant_source": null
+      },
+      {
+        "name": "recommended_max_cups",
+        "kind": "result",
+        "data_type": "number",
+        "validation": null,
+        "allowed_values": null,
+        "constant_value": null,
+        "constant_source": null
+      },
+      {
+        "name": "estimated_min_kcal",
+        "kind": "result",
+        "data_type": "number",
+        "validation": null,
+        "allowed_values": null,
+        "constant_value": null,
+        "constant_source": null
+      },
+      {
+        "name": "estimated_max_kcal",
+        "kind": "result",
+        "data_type": "number",
+        "validation": null,
+        "allowed_values": null,
+        "constant_value": null,
+        "constant_source": null
+      }
+    ],
+    "script": "def calculate(inputs: dict) -> dict:\n    \"\"\"\n    Calculates the daily recommended food quantity for an adult cat based on its weight.\n    \"\"\"\n\n    try:\n        weight = float(inputs['weight'])\n        weight_unit = inputs['weight_unit']\n        if weight <= 0:\n            return {'error': 'Invalid Input: Weight must be greater than 0'}\n    except (KeyError, TypeError, ValueError):\n        return {'error': 'Invalid Input: Weight must be greater than 0'}\n\n    # --- Constants and Data Table from the feeding guide ---\n    LB_TO_KG = 0.45359237\n    KCAL_PER_GRAM = 4.165\n\n    kg_coords = [2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5]\n    min_g_coords = [22.0, 25.0, 28.0, 32.0, 35.0, 38.0, 40.0, 42.0, 45.0, 48.0]\n    max_g_coords = [36.0, 42.0, 48.0, 52.0, 58.0, 62.0, 66.0, 70.0, 75.0, 80.0]\n    min_cups_coords = [0.25, 0.25, 0.33, 0.33, 0.33, 0.33, 0.50, 0.50, 0.50, 0.50]\n    max_cups_coords = [0.33, 0.50, 0.50, 0.50, 0.66, 0.66, 0.66, 0.75, 0.75, 0.75]\n\n    def _interpolate(x_target, x_points, y_points):\n        \"\"\"Performs 1D linear interpolation or extrapolation.\"\"\"\n        # Case 1: Extrapolation below the defined range\n        if x_target < x_points[0]:\n            i = 0\n        # Case 2: Extrapolation above the defined range\n        elif x_target > x_points[-1]:\n            i = len(x_points) - 2\n        # Case 3: Interpolation within the range\n        else:\n            # Find the interval for interpolation\n            for idx in range(len(x_points) - 1):\n                if x_points[idx] <= x_target <= x_points[idx + 1]:\n                    i = idx\n                    break\n\n        x1, x2 = x_points[i], x_points[i+1]\n        y1, y2 = y_points[i], y_points[i+1]\n\n        # Avoid division by zero if x-coordinates are identical\n        if x1 == x2:\n            return y1\n        \n        # Standard linear interpolation/extrapolation formula\n        y_target = y1 + (x_target - x1) * (y2 - y1) / (x2 - x1)\n        \n        # As per requirements, clamp any negative result to 0\n        return max(0.0, y_target)\n\n    # 1. Convert input weight to kilograms if necessary\n    target_kg = weight * LB_TO_KG if weight_unit == 'lb' else weight\n\n    # 3. Perform interpolation/extrapolation for each quantity\n    recommended_min_g = _interpolate(target_kg, kg_coords, min_g_coords)\n    recommended_max_g = _interpolate(target_kg, kg_coords, max_g_coords)\n    recommended_min_cups = _interpolate(target_kg, kg_coords, min_cups_coords)\n    recommended_max_cups = _interpolate(target_kg, kg_coords, max_cups_coords)\n\n    # 4. Calculate calorie estimations\n    estimated_min_kcal = recommended_min_g * KCAL_PER_GRAM\n    estimated_max_kcal = recommended_max_g * KCAL_PER_GRAM\n\n    # 5. Round all output fields to 2 decimal places and return\n    return {\n        'recommended_min_g': round(recommended_min_g, 2),\n        'recommended_max_g': round(recommended_max_g, 2),\n        'recommended_min_cups': round(recommended_min_cups, 2),\n        'recommended_max_cups': round(recommended_max_cups, 2),\n        'estimated_min_kcal': round(estimated_min_kcal, 2),\n        'estimated_max_kcal': round(estimated_max_kcal, 2)\n    }",
+    "test_script": "",
+    "a2ui_schema": [
+      {
+        "version": "v0.9",
+        "updateComponents": {
+          "surfaceId": "calculator-surface",
+          "components": [
+            {
+              "id": "root",
+              "component": "Column",
+              "children": [
+                "main-card"
+              ]
+            },
+            {
+              "id": "main-card",
+              "component": "Card",
+              "child": "main-column"
+            },
+            {
+              "id": "main-column",
+              "component": "Column",
+              "children": [
+                "title-text",
+                "description-text",
+                "input-row",
+                "weight-slider",
+                "calculate-button",
+                "results-card",
+                "limitations-card"
+              ]
+            },
+            {
+              "id": "title-text",
+              "component": "Text",
+              "variant": "h4",
+              "text": "Cat Food Feeding Guide Calculator"
+            },
+            {
+              "id": "description-text",
+              "component": "Text",
+              "variant": "body",
+              "text": "This calculator estimates the daily recommended amount of Farmina Adult Cat food for your pet in grams, cups, and kilocalories based on their body weight."
+            },
+            {
+              "id": "input-row",
+              "component": "Row",
+              "align": "end",
+              "children": [
+                "weight-input",
+                "weight-unit-picker"
+              ]
+            },
+            {
+              "id": "weight-input",
+              "component": "TextField",
+              "label": "Cat's Weight",
+              "variant": "number",
+              "value": {
+                "path": "/weight"
+              },
+              "weight": 1,
+              "checks": [
+                {
+                  "condition": {
+                    "call": "required",
+                    "args": {
+                      "value": {
+                        "path": "/weight"
+                      }
+                    }
+                  },
+                  "message": "Weight is required."
+                },
+                {
+                  "condition": {
+                    "call": "numeric",
+                    "args": {
+                      "value": {
+                        "path": "/weight"
+                      },
+                      "min": 0.1,
+                      "max": 50.0
+                    }
+                  },
+                  "message": "Weight must be between 0.1 and 50.0."
+                }
+              ]
+            },
+            {
+              "id": "weight-unit-picker",
+              "component": "ChoicePicker",
+              "label": "",
+              "variant": "mutuallyExclusive",
+              "displayStyle": "chips",
+              "value": {
+                "path": "/weight_unit"
+              },
+              "options": [
+                {
+                  "label": "kg",
+                  "value": "kg"
+                },
+                {
+                  "label": "lb",
+                  "value": "lb"
+                }
+              ]
+            },
+            {
+              "id": "weight-slider",
+              "component": "Slider",
+              "min": 0.1,
+              "max": 15.0,
+              "value": {
+                "path": "/weight"
+              }
+            },
+            {
+              "id": "calculate-button",
+              "component": "Button",
+              "variant": "primary",
+              "child": "calculate-button-text",
+              "action": {
+                "event": {
+                  "name": "calculate",
+                  "context": {
+                    "weight": {
+                      "path": "/weight"
+                    },
+                    "weight_unit": {
+                      "path": "/weight_unit"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "id": "calculate-button-text",
+              "component": "Text",
+              "text": "Calculate"
+            },
+            {
+              "id": "results-card",
+              "component": "Card",
+              "child": "results-column"
+            },
+            {
+              "id": "results-column",
+              "component": "Column",
+              "children": [
+                "results-title",
+                "min-grams-row",
+                "max-grams-row",
+                "min-cups-row",
+                "max-cups-row",
+                "min-kcal-row",
+                "max-kcal-row"
+              ]
+            },
+            {
+              "id": "results-title",
+              "component": "Text",
+              "variant": "h5",
+              "text": "Daily Recommendations"
+            },
+            {
+              "id": "min-grams-row",
+              "component": "Row",
+              "justify": "spaceBetween",
+              "children": [
+                "min-grams-label",
+                "min-grams-value"
+              ]
+            },
+            {
+              "id": "min-grams-label",
+              "component": "Text",
+              "text": "Recommended Grams (min)"
+            },
+            {
+              "id": "min-grams-value",
+              "component": "Text",
+              "text": {
+                "path": "/recommended_min_g"
+              }
+            },
+            {
+              "id": "max-grams-row",
+              "component": "Row",
+              "justify": "spaceBetween",
+              "children": [
+                "max-grams-label",
+                "max-grams-value"
+              ]
+            },
+            {
+              "id": "max-grams-label",
+              "component": "Text",
+              "text": "Recommended Grams (max)"
+            },
+            {
+              "id": "max-grams-value",
+              "component": "Text",
+              "text": {
+                "path": "/recommended_max_g"
+              }
+            },
+            {
+              "id": "min-cups-row",
+              "component": "Row",
+              "justify": "spaceBetween",
+              "children": [
+                "min-cups-label",
+                "min-cups-value"
+              ]
+            },
+            {
+              "id": "min-cups-label",
+              "component": "Text",
+              "text": "Recommended Cups (min)"
+            },
+            {
+              "id": "min-cups-value",
+              "component": "Text",
+              "text": {
+                "path": "/recommended_min_cups"
+              }
+            },
+            {
+              "id": "max-cups-row",
+              "component": "Row",
+              "justify": "spaceBetween",
+              "children": [
+                "max-cups-label",
+                "max-cups-value"
+              ]
+            },
+            {
+              "id": "max-cups-label",
+              "component": "Text",
+              "text": "Recommended Cups (max)"
+            },
+            {
+              "id": "max-cups-value",
+              "component": "Text",
+              "text": {
+                "path": "/recommended_max_cups"
+              }
+            },
+            {
+              "id": "min-kcal-row",
+              "component": "Row",
+              "justify": "spaceBetween",
+              "children": [
+                "min-kcal-label",
+                "min-kcal-value"
+              ]
+            },
+            {
+              "id": "min-kcal-label",
+              "component": "Text",
+              "text": "Estimated kcal (min)"
+            },
+            {
+              "id": "min-kcal-value",
+              "component": "Text",
+              "text": {
+                "path": "/estimated_min_kcal"
+              }
+            },
+            {
+              "id": "max-kcal-row",
+              "component": "Row",
+              "justify": "spaceBetween",
+              "children": [
+                "max-kcal-label",
+                "max-kcal-value"
+              ]
+            },
+            {
+              "id": "max-kcal-label",
+              "component": "Text",
+              "text": "Estimated kcal (max)"
+            },
+            {
+              "id": "max-kcal-value",
+              "component": "Text",
+              "text": {
+                "path": "/estimated_max_kcal"
+              }
+            },
+            {
+              "id": "limitations-card",
+              "component": "Card",
+              "child": "limitations-column"
+            },
+            {
+              "id": "limitations-column",
+              "component": "Column",
+              "children": [
+                "limitations-title",
+                "limitations-text"
+              ]
+            },
+            {
+              "id": "limitations-title",
+              "component": "Text",
+              "variant": "h5",
+              "text": "Limitations"
+            },
+            {
+              "id": "limitations-text",
+              "component": "Text",
+              "variant": "body",
+              "text": "The results are based on linear interpolation of standard manufacturer feeding guidelines for cats weighing between 2.0 kg and 6.5 kg. Estimates for cats outside this weight range are extrapolated and may be less accurate. Calorie calculations assume a fixed metabolic energy density of 4.165 kcal/g. Always consult your veterinarian regarding your cat's specific dietary needs."
+            }
+          ]
+        }
+      },
+      {
+        "version": "v0.9",
+        "updateDataModel": {
+          "surfaceId": "calculator-surface",
+          "value": {
+            "weight": 4.5,
+            "weight_unit": [
+              "kg"
+            ],
+            "recommended_min_g": null,
+            "recommended_max_g": null,
+            "recommended_min_cups": null,
+            "recommended_max_cups": null,
+            "estimated_min_kcal": null,
+            "estimated_max_kcal": null
+          }
+        }
+      }
+    ],
+    "original_prompt": "",
+    "retry_count": 0,
+    "generation_model": ""
+  }
+}

@@ -1,0 +1,106 @@
+metrics_to_run:
+  - multi_turn_task_success
+  - calculator_completeness
+  - parameter_consistency
+  - rejection_accuracy
+
+custom_metrics:
+  - name: calculator_completeness
+    prompt_template: |
+      You are evaluating whether an AI calculator-generation agent successfully produced all required artifacts for a working calculator.
+
+      A complete calculator generation MUST include ALL of the following in the agent's final response or trace:
+      1. A `calculator_id` (UUID string) confirming the calculator was persisted
+      2. A generated Python calculation script (visible in the trace as generated_script with a `calculate(inputs)` function)
+      3. A UI schema with input and output components (visible in the trace as ui_schema_generator output)
+      4. A user-facing description of what the calculator does
+
+      If the user's prompt was NOT a calculator request (e.g., "tell me a joke", "what's the weather"), the agent should have correctly rejected it. In that case, score 5 if rejection was clean and clear, score 1 if the agent tried to generate a calculator anyway.
+
+      ### Evaluation Target:
+      User Prompt: {prompt}
+      Final Response: {response}
+      Full Agent Trace: {agent_data}
+
+      Return your evaluation as valid JSON:
+      {
+        "score": <1-5>,
+        "explanation": "<detailed rationale>"
+      }
+
+      Scoring guide:
+      5: All 4 artifacts present AND calculator_id returned (or correct rejection for non-calculator prompts)
+      4: 3 of 4 artifacts present, minor gaps
+      3: Core script generated but missing UI schema or description
+      2: Only partial generation, major artifacts missing
+      1: Complete failure — no calculator produced (or incorrectly attempted for non-calculator prompt)
+
+  - name: parameter_consistency
+    custom_function: |
+      import json
+      import re
+
+      def evaluate(instance):
+          """Check if parameter names are consistent across the agent trace.
+
+          Extracts parameter names from intent_analysis, then checks if the
+          script_generator and ui_schema_generator used the same names.
+          """
+          agent_data = instance.get("agent_data") or {}
+          turns = agent_data.get("turns", [])
+          trace_text = json.dumps(agent_data)
+
+          # If this looks like a rejection case, skip consistency check
+          prompt_text = ""
+          if instance.get("prompt"):
+              parts = instance["prompt"].get("parts", [])
+              prompt_text = " ".join(p.get("text", "") for p in parts)
+
+          # Simple heuristic: if no turns or very short trace, likely rejection
+          if len(turns) == 0 or len(trace_text) < 200:
+              return {"score": 1.0, "explanation": "No generation trace to analyze (likely a rejection case)"}
+
+          # Try to find intent_analysis parameters in the trace
+          intent_params = set()
+          # Look for parameter name patterns in intent analysis output
+          intent_match = re.findall(r'"name":\s*"([a-z_]+)"', trace_text[:len(trace_text)//3])
+          if intent_match:
+              intent_params = set(intent_match)
+
+          if not intent_params:
+              return {"score": 0.5, "explanation": "Could not extract intent parameters from trace"}
+
+          # Check if these params appear in the later parts of the trace (script + UI)
+          later_trace = trace_text[len(trace_text)//3:]
+          found_in_later = sum(1 for p in intent_params if p in later_trace)
+          consistency_ratio = found_in_later / len(intent_params) if intent_params else 0
+
+          return {
+              "score": consistency_ratio,
+              "explanation": f"Found {found_in_later}/{len(intent_params)} intent params referenced in later trace. Params: {intent_params}"
+          }
+
+  - name: rejection_accuracy
+    prompt_template: |
+      You are evaluating whether an AI calculator-generation agent correctly handled a user request that may or may not be a valid calculator request.
+
+      VALID calculator requests: "Create a tip calculator", "Build a BMI calculator", "Make a kg to pounds converter", etc.
+      INVALID (should be rejected): "What's the weather?", "Tell me a joke", "Explain quantum physics", general chat, etc.
+
+      ### Evaluation Target:
+      User Prompt: {prompt}
+      Final Response: {response}
+      Full Agent Trace: {agent_data}
+
+      Return your evaluation as valid JSON:
+      {
+        "score": <1-5>,
+        "explanation": "<detailed rationale>"
+      }
+
+      Scoring guide:
+      5: Correct classification — valid calculator requests produced a calculator, invalid requests were rejected
+      4: Correct classification but response could be clearer
+      3: Ambiguous handling
+      2: Partially wrong classification
+      1: Completely wrong — rejected a valid calculator request, or tried to generate for a non-calculator prompt
