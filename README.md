@@ -1,4 +1,4 @@
-# Manyculator Agent
+# Manyculator
 ### Build custom calculators and converters — from a single sentence.
 
 *Manyculator turns a plain-language request — "I need a room paint quantity calculator" — into a working, ready-to-use calculator in minutes: sandboxed, cross-platform, and safe by design.*
@@ -7,6 +7,7 @@
 
 ## Table of Contents
 - [Overview](#overview)
+- [The Problem](#the-problem)
 - [Architecture & Workflow](#architecture--workflow)
   - [Architecture Decisions](#architecture-decisions)
   - [System Workflow](#system-workflow)
@@ -29,6 +30,19 @@
 The `manyculator-agent` is the core backend component responsible for generating custom interactive calculators based on natural language user intent. It leverages a graph-based workflow architecture powered by Google ADK to orchestrate LLM calls for intent analysis, live value resolution, Python script generation, and UI schema generation.
 
 A defining feature of this agent is its strict **Sandbox Execution** and **A2UI-compliant** output. The architecture isolates script validation using deterministic structural checks before applying a reasoning LLM Judge to verify intent alignment. The generated output is instantly renderable by any standard A2UI frontend.
+
+---
+
+## The Problem
+
+Niche-specific calculators often simply don't exist. The ones that do rarely fit — wrong units, wrong configuration, built for someone else's workflow. On top of that, the tools you do rely on are scattered everywhere: one app for home, another for work, another for a hobby, with nothing tying them together.
+
+**Manyculator** solves this by turning a plain-language request into a working calculator, built and configured exactly the way the user needs it:
+
+- Build a niche-specific calculator that doesn't exist yet.
+- Configure it exactly to your own units, preferences, and use case.
+- Collect all of these into one personal toolset — for life, work, education, or hobby.
+- Do all of the above in minutes, from intent alone — no searching the web, browsing app stores, or writing code.
 
 ---
 

@@ -1,6 +1,6 @@
 # Client Integration Guide
 
-This guide details how a frontend client or consumer application should interact with the `maniculator-agent` API.
+This guide details how a frontend client or consumer application should interact with the `manyculator-agent` API.
 
 ### Step 1: Establish a Session
 Before running the calculator generator, the consumer app must create a user session to track context.

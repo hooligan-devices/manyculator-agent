@@ -211,3 +211,7 @@ credentials*.json
 
 # Documentation
 specs/README.md
+
+# Local State & Databases
+app.db
+calculators_db.json
