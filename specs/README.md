@@ -1,142 +1,121 @@
-# Manyculator Agent
+# Manyculator - calc_agent
 
-## Overview
-The `calc_agent` is the core backend component responsible for generating custom interactive calculators based on natural language user intent. It leverages a graph-based workflow architecture powered by Google ADK to orchestrate LLM calls for intent analysis, live value resolution, Python script generation, and UI schema generation.
+## High-Level Overview
+The `calc_agent` is the core backend component responsible for generating custom interactive calculators based on natural language user intent. It leverages a graph-based workflow architecture powered by Google ADK to orchestrate LLM calls for intent analysis, live value resolution, Python script generation, testing, and UI schema generation.
 
 A defining feature of this agent is its strict **Sandbox Execution** and **A2UI-compliant** output. The architecture isolates script validation using deterministic structural checks before applying a reasoning LLM Judge to verify intent alignment. The generated output is instantly renderable by any standard A2UI frontend.
-
----
 
 ## Architecture & Data Models
 
 ### State Management
-State is tracked through the graph using the `CalculatorWorkflowState` Pydantic model ([generation.py](../app/models/generation.py)), which manages the prompt, blueprint, generated script, and retry counters.
+State is tracked through the graph using the `CalculatorWorkflowState` Pydantic model (`app/models/generation.py`), which manages the prompt, blueprint, generated script, and retry counters.
 
 ### Data Models
-*   `CalculatorDefinition` ([calculator.py](../app/models/calculator.py)): Represents the final calculator, including parameter definitions, the generated python `script`, and the strict `a2ui_schema`.
-*   `ParameterDef` ([calculator.py](../app/models/calculator.py)): A flattened Pydantic schema strictly enforcing component-specific properties via `Optional` fields and prompt descriptions.
-*   `ValidationRules` ([calculator.py](../app/models/calculator.py)): Holds validation ranges like min, max, step, required, and regex patterns.
+- `CalculatorDefinition`: Represents the final calculator, including parameter definitions, the generated python `script`, and the strict `a2ui_schema`.
+- `ParameterDef`: A flattened Pydantic schema strictly enforcing component-specific properties via `Optional` fields and prompt descriptions.
+- `A2UIComponent` / `A2UIPayload`: Strict Pydantic models enforcing the A2UI specification for layout, data bindings, and action events.
 
-### System Workflow
+### Workflow Graph: Simplified Architecture
+The workflow removes brittle LLM-based test generation in favor of deterministic validation and parallel graph execution:
 
-![architecture.png](img/architecture.png)
+1. **Sandbox Check** (`sandbox_check`):
+   - Fast-fails if the execution environment is misconfigured.
+2. **Parallel Generation**:
+   - `ui_schema_generator`: Generates the A2UI JSON schema containing a unified `description` field.
+   - `script_generator`: Concurrently generates the calculation Python script.
+3. **Deterministic Validation** (`script_validator`):
+   - Compiles the generated script in a secure sandbox using `exec()` to verify syntax and ensure `calculate(inputs)` is callable.
+   - Fails fast (without LLM calls) on syntax errors, routing back to `script_generator`.
+4. **The Judge** (`script_judge`):
+   - A reasoning model that compares the generated script, blueprint, and UI schema to ensure inputs/outputs align properly.
+   - Triggers targeted retries if the business logic or schema mapping is flawed.
 
-Here is a step-by-step breakdown of the agentic workflow:
+### Frontend Integration (A2UI)
+The `ui_schema_generator` outputs a standard A2UI flat array of components.
+- **Layouts**: E.g., `Column` points to children via string IDs.
+- **Inputs**: `TextField` and `ChoicePicker` bind directly to parameters via JSON pointers (e.g., `"value": {"path": "/weight"}`).
+- **Interactivity**: An injected `Button` component fires an `"action": {"event": {"name": "calculate", ...}}`. The frontend catches this event and posts the data model to the execution endpoint.
+- **Strict Validation**: Before finalizing the UI layout, the JSON payload is validated directly against the official `a2ui.schema.manager`. If the LLM produces a non-compliant schema, the validator blocks it and forces a retry loop.
 
-- **Check Sandbox Health** *(Function Node, Debug Only)*: Runs a simple Python script in the sandbox on startup to verify the execution environment is healthy.
-- **Blueprint Generator & Intent Router** *(Agent Node)*: Creates a structured blueprint from the user's intent. This serves as the single source of truth for the rest of the workflow, defining parameters, computation logic, and edge cases. It also acts as an intent router — if the prompt is not related to building a calculator, it halts the workflow and returns an error.
-- **Script Generator & UI Schema Generator** *(Agent Nodes)*: These run in parallel, generating their respective outputs based on the shared blueprint.
-- **Script Validator & UI Schema Validator** *(Function Nodes)*: These run deterministic checks *before* any LLM judgment. The Script Validator uses the sandbox to catch syntax errors, while the UI Schema Validator validates the JSON structure against the A2UI SDK. Failing fast deterministically saves expensive LLM tokens and latency.
-- **Script Judge** *(Agent Node)*: Evaluates if the generated Python script correctly handles the exact data shapes and component IDs defined in the UI schema. It acts as the final gatekeeper to ensure front-to-back compatibility.
-- **Save Calculator** *(Function Node)*: Saves the finalized calculator script and UI schema to the database.
-- **Join Calculator ID & UI Schema** *(Function Node)*: Constructs the final JSON payload containing the new Calculator ID and Schema.
+## Interfaces & APIs
 
-**External API Endpoints**:
-- **Evaluate Inputs** (`POST /evaluate/{id}`): Retrieves the calculator script, injects the user's inputs, executes it securely in the GKE sandbox, and returns the computed result.
-- **Fetch Schema** (`GET /schema/{id}`): Retrieves the A2UI schema for a specific calculator from Firestore.
-- **Create Session** (`POST /sessions`): Generates and returns a unique session ID, natively provided by the ADK framework.
+### 1. Agent Workflow (SSE Stream)
+- Exposed automatically by the ADK `FastAPI` wrapper on `POST /apps/app/users/{user_id}/sessions/{session_id}/messages` (or `POST /run_sse`).
+- Frontend apps send a prompt payload and receive a Server-Sent Events (SSE) stream of the graph's execution.
+- The final event from `persist_and_respond` contains the `calculator_id`.
 
----
-
-## Authentication (Application Default Credentials)
-
-This project (including local development, Firestore database connections, and Vertex AI LLM routing) relies universally on **Application Default Credentials (ADC)**. This architecture ensures you do not need to manage raw API keys or service account JSON files across different environments.
-
-**To set up ADC locally:**
-1. Install the [Google Cloud CLI](https://cloud.google.com/sdk/docs/install) (`gcloud`).
-2. Initialize and authenticate with your Google account:
-   ```bash
-   gcloud auth application-default login
-   ```
-3. Set your active project (the one containing your Firestore DB and Vertex AI API quota):
-   ```bash
-   gcloud config set project YOUR_PROJECT_ID
-   ```
-*Note: When deployed to Google Cloud (e.g., GKE or Cloud Run), ADC is provided automatically by the attached compute Service Account, requiring zero key configuration.*
-
----
-
-## Database Setup (Firestore)
-
-The agent automatically persists all generated calculator scripts and UI schemas to Google Cloud Firestore so they can be retrieved and executed by the frontend.
-
-1. **Enable Firestore API** in your Google Cloud Project.
-2. **Create a Named Database**:
-   * Go to the Firestore console in GCP.
-   * Click **Create Database**.
-   * Set the **Database ID** strictly to `calculators` (the codebase specifically routes to this named database, *not* the `(default)` database).
-   * Choose **Native mode** and select your preferred region.
-3. **Authentication**: The backend connects automatically using ADC. As long as you have completed the `gcloud auth application-default login` step above and your Google user has Firestore read/write permissions, the connection will succeed without extra configuration.
-
----
-
-## Getting Started (Local Development)
-
-### Prerequisites
-*   **Python 3.11+** and the **`uv`** package manager.
-*   **Google Cloud credentials** configured via [Application Default Credentials (ADC)](#authentication-application-default-credentials).
-*   **Firestore Database** created and configured (see [Database Setup](#database-setup-firestore)).
-
-### Setup
-1. Clone the repository and navigate into it.
-2. Install dependencies using `uv`:
-   ```bash
-   uv sync
-   ```
-3. Configure Environment Variables:
-   * Copy the example configuration: `cp .env.example .env`
-   * Open `.env` and configure your GCP variables (`GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_LOCATION`). The `google-genai` SDK will automatically route requests through the ADC you set up earlier.
-
-4. Start the FastAPI server:
-   ```bash
-   uv run uvicorn app.fast_api_app:app --reload --host 0.0.0.0 --port 8000
-   ```
-5. Access the API and Playground:
-   * The core agent API is now running and accessible at `http://127.0.0.1:8000/`.
-   * **Interactive Playground**: You can instantly chat with the agent and test the UI by visiting the built-in playground at `http://127.0.0.1:8000/dev-ui/?app=app`. 
-     * *Note:* Because the `web=True` flag is preset in `app/fast_api_app.py`, you do **not** need to run the `agents-cli playground` command explicitly; the dev-ui is bundled directly into the FastAPI server.
-     * *Note:* To use the dev-ui playground correctly, ensure you have the `google-agents-cli` installed globally. If you haven't installed it yet, run: `uv tool install google-agents-cli`.
-
----
-
-## Consumer App Integration Guide
-
-The integration guide for consumer applications has been moved to a separate document. Please refer to [Consumer App Integration Guide](specs/app_integration.md) for full details on establishing sessions, generating calculators, retrieving UI schemas, and evaluating inputs.
-
----
+### 2. Execution Endpoint
+- `POST /evaluate/{calculator_id}`
+- Receives the A2UI data model: `{"inputs": {"weight": 70, "height": 175}}`
+- Loads the calculator's `script` from the Google Cloud Firestore database (`calculators` collection).
+- Executes the Python calculation logic inside the secure Sandbox (or local executor).
+- Returns results matching the A2UI component IDs: `{"outputs": {"bmi_result_text": 24.2}}`
+- If the calculation script yields a dictionary containing an `"error"` key (due to script-defined input validation), the endpoint returns a `400 Bad Request` with the error message so the frontend can catch and display it natively.
 
 ## Security & Operational Mechanics
 
-### The Dual-Executor Security Model
+### 1. The Dual-Executor Security Model
 The app automatically toggles between two code executors based on the environment:
-*   **Production (GKE)**: Automatically utilizes `GkeCodeExecutor` ([sandbox_executor.py](../app/services/sandbox_executor.py)), which securely spawns isolated, ephemeral `gvisor` Pods (Kubernetes Jobs) to run LLM-generated code.
-*   **Local Development**: Defaults to `DummyExecutor`, using Python's raw `exec()` in the local runtime.
-    > [!WARNING]
-    > Running the agent locally executes untrusted LLM-generated Python code directly on your machine. This is for testing only.
+- If deployed to Kubernetes (`KUBERNETES_SERVICE_HOST` is present), it spins up the secure `GkeCodeExecutor`.
+- If running locally, it defaults to a `DummyExecutor` which uses Python's raw `exec()` to run LLM-generated code. **Warning**: Running the agent locally exposes your machine to arbitrary code execution; it is for trusted prototyping only.
 
-### Firestore Persistence
-Calculators are persisted in **Google Cloud Firestore** under a dedicated database:
-*   **Database ID**: `calculators`
-*   **Collection**: `calculators`
-*   Configured inside [calculator_store.py](../app/calculator_store.py).
+### 2. Multi-Tiered Model Routing
+The graph routes workloads to highly specialized, tiered models (configured in `config.py`) to optimize cost and speed:
+- `model_coding` (`gemini-2.5-pro`): Heavy lifting (script generation).
+- `model_reasoning` (`gemini-3.5-flash`): Intent parsing and Judging.
+- `model_tooling` (`gemini-2.5-flash-lite`): Fast, low-latency UI schemas.
+
+### 3. Frontend Code Hiding
+When the API fetches a calculator, it intentionally strips the raw Python `script` from the payload, returning only the `a2ui_schema` and parameters. This enforces a strict separation of concerns where the frontend is physically prevented from seeing or executing the code itself.
+
+## Persistence
+Calculators are saved natively to **Google Cloud Firestore** (under the `calculators` collection) via the `CalculatorStore` singleton located in `app/calculator_store.py`. This ensures full scalability and accessibility from any deployed frontend client, as opposed to local JSON files.
+
+## Testing Strategy
+- **Generation Tests (LLM Eval)**: The ADK Eval framework runs server-side evaluation of the generation pipeline via `eval_config.yaml`.
+- **Sandbox Checks**: Deterministic structure validation of scripts using local compilation.
+- **Unit and Integration**: Standard Pytest suite for API endpoints and workflow routing logic.
 
 ---
 
-## Testing Strategy
-*   **Unit & Integration Tests**: Executed via Pytest at [tests/integration/](../tests/integration/).
-    ```bash
-    uv run pytest tests/unit tests/integration
-    ```
-*   **LLM Evaluation Suite**: Run via the ADK quality flywheel to evaluate generation performance.
-    ```bash
-    agents-cli eval generate
-    agents-cli eval grade
-    ```
+## Deployment Guide
+The `calc_agent` is configured for **Google Kubernetes Engine (GKE)** target deployment.
+
+### 1. Prerequisites
+- `google-agents-cli` CLI tool installed (`uv tool install google-agents-cli`).
+- Configured active `gcloud` project targeting the Google Cloud Project (`manyculator`).
+- Google Cloud services enabled: `cloudbuild.googleapis.com`, `secretmanager.googleapis.com`, and GKE access.
+
+### 2. Manual/CLI Deployment
+To deploy the agent to the dev/production environment on GKE:
+```bash
+agents-cli deploy --no-confirm-project
+```
+This automated command triggers the following workflow:
+1. **Terraform Apply**: Initializes and applies the GKE infrastructure configs in `deployment/terraform/single-project/`.
+2. **Cloud Build**: Bundles the code source, builds the Docker container, and tags/pushes it to Artifact Registry (`us-east1-docker.pkg.dev/manyculator/calc-agent/calc-agent:latest`).
+3. **Kustomize / Manifest Rollout**: Automatically applies the updated deployment image to GKE.
+4. **Environment Injection**: Sets environment variables (like `AGENT_VERSION` and `APP_URL`).
+5. **Rollout Verification**: Waits for GKE rolling update to complete and displays the internal service IP.
+
+### 3. Secrets Management & Third-Party LLMs
+ADK's integration with Google Kubernetes Engine relies on native Workload Identity. Because of this:
+- **Native Gemini Models**: Do NOT require any manual API keys or secrets. The underlying Kubernetes Service Account (`calc-agent-app`) is automatically granted `roles/aiplatform.user` by Terraform, allowing secure, seamless access to Vertex AI models.
+- **Third-Party Models (LiteLLM)**: If using models via LiteLLM (e.g., OpenRouter, OpenAI, Anthropic), explicit API keys are required. During deployment, the `agents-cli deploy` tool automatically syncs your local `.env` variables to Google Cloud Secret Manager. **Important**: You must ensure the Secret Manager API (`secretmanager.googleapis.com`) is enabled in your Google Cloud Project before deploying, otherwise the secrets will silently fail to sync and the agent will encounter authentication errors.
+
+### 4. Sandbox Configuration
+No manual configuration is required for the code execution sandbox on deployment. The Terraform scripts automatically create a Kubernetes `Role` (`sandbox_role`) and `RoleBinding` (`sandbox_binding`) within the namespace. This securely grants the deployed agent's ServiceAccount the permissions required to dynamically spin up Kubernetes Jobs (`GkeCodeExecutor`) for running calculator logic and validating scripts.
+
+### 5. Accessing the Deployed Service
+Since the GKE service runs internally (default IP `10.0.0.5`), you can port-forward it locally to test or connect with the client app:
+```bash
+kubectl port-forward svc/calc-agent 8080:8080 -n calc-agent
+```
 
 ---
 
 ## Architectural Decision Records (ADRs)
 
 ### ADR 9: Simplified Parallel Architecture (2026-06-28)
-*   **Decision**: Removed LLM-based `test_generator` and `test_judge` nodes in favor of a deterministic `script_validator` (compilation) and a reasoning `script_judge` (static alignment check).
-*   **Context**: LLMs struggle to generate unit tests for themselves without falling into infinite hallucination loops. The simplified graph validates structural correctness first, allows parallel UI/Script generation, and then judges them for cross-compatibility before saving.
+**Decision:** Removed `test_generator` and `test_judge` in favor of a deterministic `script_validator` (compilation) and an LLM-based `script_judge` (alignment check).
+**Context:** LLMs struggle to generate tests for themselves without falling into hallucination loops. The simplified graph validates structural correctness first, allows parallel UI/Script generation, and then judges them for cross-compatibility before saving.

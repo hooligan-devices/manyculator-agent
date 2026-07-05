@@ -1,7 +1,32 @@
 # Manyculator Agent
+### Build custom calculators and converters — from a single sentence.
+
+*Manyculator turns a plain-language request — "I need a room paint quantity calculator" — into a working, ready-to-use calculator in minutes: sandboxed, cross-platform, and safe by design.*
+
+---
+
+## Table of Contents
+- [Overview](#overview)
+- [Architecture & Workflow](#architecture--workflow)
+  - [Architecture Decisions](#architecture-decisions)
+  - [System Workflow](#system-workflow)
+- [Authentication (Application Default Credentials)](#authentication-application-default-credentials)
+- [Database Setup](#database-setup)
+  - [Option A: Firestore (Default)](#option-a-firestore-default)
+  - [Option B: Local JSON File (Testing)](#option-b-local-json-file-testing)
+- [Configuration](#configuration)
+  - [Model Selection](#model-selection)
+  - [Development Options](#development-options)
+- [Getting Started (Local Development)](#getting-started-local-development)
+  - [Prerequisites](#prerequisites)
+  - [Setup](#setup)
+- [Deployment (GKE / Google Cloud Platform)](#deployment-gke--google-cloud-platform)
+  - [Prerequisites](#prerequisites-1)
+  - [Instructions](#instructions)
+- [Client Integration](#client-integration)
 
 ## Overview
-The `calc_agent` is the core backend component responsible for generating custom interactive calculators based on natural language user intent. It leverages a graph-based workflow architecture powered by Google ADK to orchestrate LLM calls for intent analysis, live value resolution, Python script generation, and UI schema generation.
+The `manyculator-agent` is the core backend component responsible for generating custom interactive calculators based on natural language user intent. It leverages a graph-based workflow architecture powered by Google ADK to orchestrate LLM calls for intent analysis, live value resolution, Python script generation, and UI schema generation.
 
 A defining feature of this agent is its strict **Sandbox Execution** and **A2UI-compliant** output. The architecture isolates script validation using deterministic structural checks before applying a reasoning LLM Judge to verify intent alignment. The generated output is instantly renderable by any standard A2UI frontend.
 
@@ -10,9 +35,14 @@ A defining feature of this agent is its strict **Sandbox Execution** and **A2UI-
 ## Architecture & Workflow
 
 ### Architecture Decisions
+The central architectural principle of this project is **decoupling UI and logic via A2UI & sandboxing**.
 
-- **Decoupling UI and Logic via A2UI & Sandboxing**:
-  Since building calculators requires dynamic Python script generation, the UI is decoupled from the execution logic using the A2UI protocol. This ensures untrusted scripts run in an isolated sandbox, fully protecting the consumer application. Furthermore, because the computation script is stored on the backend, the same calculator instance can seamlessly power cross-platform UIs (Web, iOS, Android).
+Since building calculators requires dynamic Python script generation, the UI is decoupled from the execution logic using the A2UI protocol. This ensures untrusted scripts run in an isolated sandbox, fully protecting the consumer application. Furthermore, because the computation script is stored on the backend, the same calculator instance can seamlessly power cross-platform UIs (Web, iOS, Android).
+
+![A2UI](img/a2ui.png)
+
+**Other decisions:**
+
 - **Abstracting the Agentic System**:
   The workflow is designed to remain completely agnostic of consumer app implementations. This strict separation of concerns allows the agentic system (which requires specialized infrastructure like GKE and sandboxing) to scale independently from the frontend clients.
 - **Asynchronous Streaming (SSE)**:
@@ -24,7 +54,9 @@ A defining feature of this agent is its strict **Sandbox Execution** and **A2UI-
 
 ### System Workflow
 
-![architecture.png](img/architecture.png)
+At its core, the system orchestrates 4 autonomous LLM agents—handling planning, coding, and judging—alongside rigid function nodes for security and storage.
+
+![Workflow](img/architecture.png)
 
 Step-by-step breakdown of the agentic workflow:
 
@@ -46,6 +78,9 @@ Step-by-step breakdown of the agentic workflow:
 ## Authentication (Application Default Credentials)
 
 This project (including local development, Firestore database connections, and Vertex AI LLM routing) relies universally on **Application Default Credentials (ADC)**. This architecture ensures you do not need to manage raw API keys or service account JSON files across different environments.
+
+> [!IMPORTANT]  
+> **Active Billing Required**: You must have a Google Cloud Project with an active billing account. This is strictly required for Vertex AI LLMs, creating Firestore databases, and deploying GKE infrastructure.
 
 **To set up ADC locally:**
 1. Install the [Google Cloud CLI](https://cloud.google.com/sdk/docs/install) (`gcloud`).
@@ -129,6 +164,27 @@ You can toggle the following operational behaviors inside the `LocalConfig` and 
    * **Interactive Playground**: You can instantly chat with the agent and test the UI by visiting the built-in playground at `http://127.0.0.1:8000/dev-ui/?app=app`. 
      * *Note:* Because the `web=True` flag is preset in `app/fast_api_app.py`, you do **not** need to run the `agents-cli playground` command explicitly; the dev-ui is bundled directly into the FastAPI server.
      * *Note:* To use the dev-ui playground correctly, ensure you have the `google-agents-cli` installed globally. If you haven't installed it yet, run: `uv tool install google-agents-cli`.
+
+---
+
+## Deployment (GKE / Google Cloud Platform)
+
+### Prerequisites
+*   **Google Cloud credentials** configured via [Application Default Credentials (ADC)](#authentication-application-default-credentials).
+*   The `agents-cli` installed globally (`uv tool install google-agents-cli`).
+*   **Database** created and configured for Firestore (see [Database Setup](#database-setup)).
+
+### Instructions
+Because this project is heavily scaffolded using the ADK framework, everything is completely **Terraform configured**. This includes the GKE cluster, Artifact Registry, Storage Buckets, and all necessary IAM permissions and Service Accounts. All infrastructure and resources will be automatically created with the base name `calc-agent` on GKE.
+
+To deploy the entire stack from scratch to a new GCP project, simply run:
+```bash
+agents-cli deploy --update-env-vars "ENVIRONMENT=gke" --no-confirm-project
+```
+
+*   The `--update-env-vars "ENVIRONMENT=gke"` flag is critical: it tells the backend application to switch the variables in `app/config.py` over to the `GkeConfig` mode (which enforces strict GKE sandboxing for code evaluation).
+
+> **Note on Public Endpoints**: For demonstration purposes, this project's Terraform configuration creates a publicly accessible endpoint on the internet. If you want to lock this down, you must open `deployment/terraform/single-project/service.tf` and uncomment the line `"cloud.google.com/load-balancer-type" = "Internal"`. This will restrict traffic to your internal VPC.
 
 ---
 

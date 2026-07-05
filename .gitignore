@@ -208,3 +208,6 @@ tools/a2a-inspector/
 *-key.json
 credentials*.json
 *.tfstate*
+
+# Documentation
+specs/README.md
