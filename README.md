@@ -170,7 +170,7 @@ You can toggle the following operational behaviors inside the `LocalConfig` and 
 ### Prerequisites
 *   **Python 3.11+** and the **`uv`** package manager.
 *   **Google Cloud credentials** configured via [Application Default Credentials (ADC)](#authentication-application-default-credentials).
-*   **Database** created and configured for Firestore, OR switched to local JSON storage (see [Database Setup](#database-setup)).
+*   **Database** created and configured for Firestore, OR toggled to local storage (see [Database Setup](#database-setup)).
 
 ### Setup
 1. Clone the repository and navigate into it.
