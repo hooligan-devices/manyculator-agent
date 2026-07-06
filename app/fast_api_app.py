@@ -36,8 +36,8 @@ allow_origins = (
 logs_bucket_name = os.environ.get("LOGS_BUCKET_NAME")
 
 AGENT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# In-memory session configuration - no persistent storage
-session_service_uri = None
+# ADK session configuration - use custom Firestore service
+session_service_uri = "firestore://default"
 
 artifact_service_uri = f"gs://{logs_bucket_name}" if logs_bucket_name else None
 
