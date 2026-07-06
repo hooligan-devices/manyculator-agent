@@ -1,3 +1,16 @@
+"""Firestore-backed persistent ADK Session Service.
+
+This module implements a custom ADK Session Service that persists conversational state
+and workflow events to Google Cloud Firestore.
+
+Instead of storing the entire session and all its events as a single JSON string
+inside a single document, this service breaks it down relationally:
+- **Session Metadata**: Stored in `sessions/{session_id}` (only app_name, user_id, and state).
+- **Events Subcollection**: Stored in `sessions/{session_id}/events/{event_id}`.
+- **Payload Chunking**: If an individual event payload exceeds 900 KB, it is dynamically
+  split into chunks and stored in a nested `chunks/{chunk_id}` subcollection under the event.
+"""
+
 import logging
 import json
 from typing import Any, Optional
@@ -14,7 +27,13 @@ logger = logging.getLogger(__name__)
 CHUNK_SIZE = 900_000  # 900KB, well under the 1MB Firestore limit
 
 class FirestoreSessionService(BaseSessionService):
-    """Firestore-backed session service for ADK."""
+    """Firestore-backed session service for scalable, multi-worker ADK deployments.
+    
+    In-memory session storage fails when deploying behind load balancers (like GKE or Cloud Run)
+    because subsequent requests (e.g., SSE stream connections) may route to different worker
+    nodes that don't have the session in RAM. This service ensures state is universally
+    accessible across all stateless workers.
+    """
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -36,6 +55,17 @@ class FirestoreSessionService(BaseSessionService):
         state: Optional[dict[str, Any]] = None,
         session_id: Optional[str] = None,
     ) -> Session:
+        """Create and initialize a new tracking session in Firestore.
+        
+        Args:
+            app_name: The namespace of the app.
+            user_id: The ID of the user requesting the session.
+            state: Optional dictionary of initial state variables.
+            session_id: Optional explicit UUID. If omitted, a new one is generated.
+            
+        Returns:
+            The initialized ADK Session object.
+        """
         session_id = session_id.strip() if session_id and session_id.strip() else platform_uuid.new_uuid()
         
         session = Session(
@@ -66,6 +96,22 @@ class FirestoreSessionService(BaseSessionService):
         session_id: str,
         config: Optional[GetSessionConfig] = None,
     ) -> Optional[Session]:
+        """Retrieve an existing session and dynamically reconstruct its event history.
+        
+        This method handles legacy un-chunked session structures as well as the chunked
+        subcollection architecture. If an event was chunked across multiple
+        documents, this method queries all chunks, concatenates
+        them in order, and parses the reconstructed JSON.
+        
+        Args:
+            app_name: The app namespace.
+            user_id: The user ID.
+            session_id: The UUID of the session to retrieve.
+            config: Optional ADK configuration for pagination or event limits.
+            
+        Returns:
+            The fully reconstructed Session object, or None if not found.
+        """
         if not self.collection:
             return None
             
@@ -151,6 +197,11 @@ class FirestoreSessionService(BaseSessionService):
     async def list_sessions(
         self, *, app_name: str, user_id: Optional[str] = None
     ) -> ListSessionsResponse:
+        """List all sessions belonging to a specific app and optionally a specific user.
+        
+        Note: This is a shallow retrieve. It does not fetch the nested event history
+        for performance reasons.
+        """
         if not self.collection:
             return ListSessionsResponse(sessions=[])
             
@@ -188,6 +239,12 @@ class FirestoreSessionService(BaseSessionService):
     async def delete_session(
         self, *, app_name: str, user_id: str, session_id: str
     ) -> None:
+        """Delete a session document from Firestore.
+        
+        Warning: This performs a shallow delete. Nested `events` and `chunks` subcollections
+        are left orphaned in Firestore as per standard Firestore behavior. A background cron
+        job should be used if strict data deletion is required.
+        """
         if not self.collection:
             return
             
@@ -202,6 +259,16 @@ class FirestoreSessionService(BaseSessionService):
                 logger.debug(f"Deleted session {session_id} from Firestore")
 
     async def append_event(self, session: Session, event: Event) -> Event:
+        """Append a new event to the session and persist it to Firestore.
+        
+        This measures the JSON size of the incoming event. If the event is < 900 KB,
+        it stores it cleanly in the `events` subcollection. If it exceeds 900 KB (e.g.,
+        due to Base64 image payloads), it splits the payload into strict chunks and
+        saves them in a nested `chunks` subcollection under the event document.
+        
+        All writes (session update + chunk writes) are committed atomically using a
+        Firestore Batch to guarantee data integrity.
+        """
         if event.partial:
             return event
             

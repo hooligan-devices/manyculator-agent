@@ -1,3 +1,10 @@
+"""Calculator Database Entities and Types.
+
+This module defines the core database models, enums, and components
+that represent a finalized calculator. These models map directly to
+Firestore documents and enforce strict typing on the UI parameters.
+"""
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -5,12 +12,14 @@ from typing import Any, List, Optional, Dict, Literal, Union, Annotated
 from pydantic import BaseModel, Field
 
 class CalculatorStatus(str, Enum):
+    """Lifecycle status of a generated calculator."""
     DRAFT = "draft"
     ACTIVE = "active"
     ERROR = "error"
     ARCHIVED = "archived"
 
 class ParameterKind(str, Enum):
+    """Defines the operational role of a parameter within the calculator."""
     INPUT = "input"           # User-controllable via UI (TextField, Slider, etc.)
     RESULT = "result"         # Computed output, displayed to user
     INITIAL = "initial"       # Hardcoded constant, never changes
@@ -18,15 +27,15 @@ class ParameterKind(str, Enum):
     CHOICE = "choice"         # Constrained selection from options (dropdown/radio)
 
 class ValidationRules(BaseModel):
+    """Numerical or pattern validation constraints for UI components."""
     min_value: Optional[float] = None
     max_value: Optional[float] = None
     step: Optional[float] = None
     required: bool = True
     pattern: Optional[str] = None       # Regex for string validation
 
-
-
 class UIComponent(str, Enum):
+    """Supported frontend UI component types."""
     TEXT_FIELD = "TextField"
     CHOICE_PICKER = "ChoicePicker"
     SLIDER = "Slider"
@@ -34,10 +43,16 @@ class UIComponent(str, Enum):
     RESULT = "Result"
 
 class ChoiceOption(BaseModel):
+    """A selectable option within a ChoicePicker component."""
     label: str
     value: str
 
 class ParameterDef(BaseModel):
+    """Definition of a single UI or logical parameter used by the calculator.
+    
+    This schema dictates how the A2UI generator should render the frontend
+    component, and what data types the Python script should expect as input.
+    """
     name: str
     kind: ParameterKind
     component_type: Literal["TextField", "ChoicePicker", "Slider", "CheckBox", "Result"]
@@ -59,7 +74,12 @@ class ParameterDef(BaseModel):
     data_type: Optional[Literal["number", "string", "boolean", "list"]] = Field(default=None, description="Only for Result")
 
 class CalculatorDefinition(BaseModel):
-    """Core entity representing a generated calculator."""
+    """Core entity representing a fully generated calculator.
+    
+    This is the exact structure saved to the persistent database (e.g. Firestore).
+    It contains both the declarative A2UI schema needed by the frontend and
+    the raw Python logic script needed by the sandbox executor.
+    """
     id: str                          # UUID
     name: str                        # Human-readable name
     description: str                 # Generated description for user
