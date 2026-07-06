@@ -14,7 +14,7 @@
 - [Authentication (Application Default Credentials)](#authentication-application-default-credentials)
 - [Database Setup](#database-setup)
   - [Option A: Firestore (Default)](#option-a-firestore-default)
-  - [Option B: Local JSON File (Testing)](#option-b-local-json-file-testing)
+  - [Option B: Local Development & Testing](#option-b-local-development--testing)
 - [Configuration](#configuration)
   - [Model Selection](#model-selection)
   - [Development Options](#development-options)
