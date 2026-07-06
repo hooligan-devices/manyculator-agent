@@ -30,15 +30,15 @@ Prompt Engineering Strategy:
        correct without losing the original context.
 
 Why ``output_schema`` is NOT used:
-    Vertex AI's function-calling mode (which ``output_schema`` triggers) is
-    incompatible with producing raw JSON output — it wraps responses in a
-    function call envelope. Instead, the A2UI SDK injects prompt instructions
-    telling the LLM to wrap its JSON in ``<a2ui-json>`` tags, and the
-    downstream ``ui_schema_validator`` node parses and validates the result.
+    Passing an ``output_schema`` forces Vertex AI to return a function call
+    object rather than raw text. Since the UI schema is a massive JSON payload,
+    we skip ``output_schema`` and tell the LLM to output raw text wrapped in
+    ``<a2ui-json>`` tags. The downstream ``ui_schema_validator`` then parses
+    these tags manually.
 
 Why ``include_contents='none'``:
     All context the LLM needs is injected via the dynamic instruction from
-    workflow state (blueprint, description, validation errors). Conversation
+    workflow state (blueprint, validation errors). Conversation
     history would only add noise and consume tokens.
 """
 
@@ -66,7 +66,7 @@ schema_manager = A2uiSchemaManager(
 def dynamic_instruction(ctx):
     """Dynamically builds the system prompt for A2UI schema generation.
     
-    Reads the `blueprint` and `description` from state, and applies strict A2UI
+    Reads the `blueprint` from state, and applies strict A2UI
     rendering rules. Crucially, it provides a full BMI calculator example to
     teach the LLM the exact required JSON structure (flat component tree, specific
     binding formats, etc.).
@@ -77,7 +77,6 @@ def dynamic_instruction(ctx):
     #    a dict (if deserialized from JSON state), or a raw string.
     # ------------------------------------------------------------------
     blueprint = ctx.state.get("blueprint", "")
-    description = ctx.state.get("description", "")
 
     if hasattr(blueprint, "model_dump_json"):
         # Pydantic v2 model — use its built-in JSON serializer for fidelity.
@@ -474,9 +473,7 @@ def dynamic_instruction(ctx):
         role_description="You are a frontend generator that outputs a valid A2UI declarative JSON schema payload.",
         workflow_description=(
             "Generate a complete A2UI JSON payload for a calculator based STRICTLY on this blueprint:\n\n"
-            f"{blueprint}\n\n"
-            "User description of this calculator:\n"
-            f"{description}"
+            f"{blueprint}"
         ),
         ui_description=ui_desc,
         include_schema=True,
@@ -500,11 +497,9 @@ ui_schema_generator = Agent(
     include_contents='none',
     # instruction is a callable — ADK invokes dynamic_instruction(ctx) on
     # every execution, allowing the prompt to reflect the latest state
-    # (blueprint, description, and any validation errors from prior attempts).
+    # (blueprint, and any validation errors from prior attempts).
     instruction=dynamic_instruction,
-    # INTENTIONALLY no output_schema. Vertex AI's function-calling mode
-    # (triggered by output_schema) wraps LLM responses in a function-call
-    # envelope, which is incompatible with producing raw JSON output.
-    # Instead, the A2UI SDK instructs the LLM to wrap JSON in <a2ui-json>
-    # tags, and the downstream ui_schema_validator parses + validates it.
+    # INTENTIONALLY no output_schema. Passing it forces a function call object,
+    # which breaks raw JSON generation. Instead, we prompt the LLM to wrap its 
+    # JSON in <a2ui-json> tags and parse them downstream in ui_schema_validator.
 )

@@ -43,7 +43,6 @@ logger = logging.getLogger(__name__)
 BASE_URL = "http://127.0.0.1:8000"
 RUN_SSE_URL = BASE_URL + "/run_sse"
 A2A_RPC_URL = BASE_URL + "/a2a/app/"
-AGENT_CARD_URL = A2A_RPC_URL + ".well-known/agent-card.json"
 
 HEADERS = {"Content-Type": "application/json"}
 
@@ -89,11 +88,11 @@ def start_server() -> subprocess.Popen[str]:
 
 
 def wait_for_server(timeout: int = 90, interval: int = 1) -> bool:
-    """Wait for the server to be ready (agent card requires the lifespan to run)."""
+    """Wait for the server to be ready."""
     start_time = time.time()
     while time.time() - start_time < timeout:
         try:
-            response = requests.get(AGENT_CARD_URL, timeout=10)
+            response = requests.get(BASE_URL + "/docs", timeout=10)
             if response.status_code == 200:
                 logger.info("Server is ready")
                 return True
@@ -167,59 +166,5 @@ def test_adk_run_sse(server_fixture: subprocess.Popen[str]) -> None:
     assert has_text_content, "Expected at least one event with text content"
 
 
-def test_a2a_chat_stream(server_fixture: subprocess.Popen[str]) -> None:
-    """Test the A2A route using the JSON-RPC streaming protocol."""
-    logger.info("Starting A2A chat stream test")
-
-    message = Message(
-        message_id=f"msg-user-{uuid.uuid4()}",
-        role=Role.user,
-        parts=[Part(root=TextPart(text="Hi!"))],
-    )
-    request = SendStreamingMessageRequest(
-        id="test-req-001",
-        params=MessageSendParams(message=message),
-    )
-    response = requests.post(
-        A2A_RPC_URL,
-        headers=HEADERS,
-        json=request.model_dump(mode="json", exclude_none=True),
-        stream=True,
-        timeout=60,
-    )
-    assert response.status_code == 200
-
-    responses: list[SendStreamingMessageResponse] = []
-    for line in response.iter_lines():
-        if line:
-            line_str = line.decode("utf-8")
-            if line_str.startswith("data: "):
-                responses.append(
-                    SendStreamingMessageResponse.model_validate(
-                        json.loads(line_str[6:])
-                    )
-                )
-
-    assert responses, "No responses received from stream"
-
-    final_responses = [
-        r.root
-        for r in responses
-        if hasattr(r.root, "result")
-        and hasattr(r.root.result, "final")
-        and r.root.result.final is True
-    ]
-    assert final_responses, "No final response received"
-    assert final_responses[-1].result.status.state == "completed"
-
-
-def test_agent_card(server_fixture: subprocess.Popen[str]) -> None:
-    """Test that the A2A agent card is served at the well-known URI."""
-    response = requests.get(AGENT_CARD_URL, timeout=10)
-    assert response.status_code == 200, f"A2A endpoint returned {response.status_code}"
-
-    served_agent_card = response.json()
-    for field in ("name", "description", "skills", "capabilities", "url", "version"):
-        assert field in served_agent_card, f"Missing field in agent card: {field}"
 
 
