@@ -21,14 +21,6 @@ Routing (three possible outcomes):
       self-correct.
     - ``'FAIL'``   → Retries exhausted. Routes to ``generation_failed``
       terminal node.
-
-Workflow position::
-
-    script_generator ──► **script_validator** ──► script_validator_router
-                             │        ▲                    │
-                             │ RETRY  │                    │ VALID
-                             └────────┘                    ▼
-                                                    script_judge
 """
 
 from google.adk.workflow import node

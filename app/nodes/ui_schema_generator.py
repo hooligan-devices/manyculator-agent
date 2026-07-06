@@ -143,10 +143,6 @@ def dynamic_instruction(ctx):
         #   - Button action with event payload
         #   - Result display via bound Text components
         #   - updateDataModel with sensible default values
-        #
-        # Without this example, the LLM produces structurally valid but
-        # semantically wrong JSON roughly 40% of the time. With it, first-
-        # attempt success rate jumps to ~90%.
         # ---------------------------------------------------------------
         "EXAMPLE OF A COMPLETE, CORRECT, FULLY FLAT A2UI PAYLOAD:\n"
         "```json\n"

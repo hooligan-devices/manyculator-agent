@@ -3,19 +3,10 @@
 This ADK Agent node acts as an independent reviewer that evaluates the
 generated Python script against the blueprint and UI schema *before* the
 workflow proceeds to the persist_and_respond node. It is intentionally a
-separate LLM call (potentially using a different, cheaper model via
+separate LLM call (potentially using a different model via
 ``settings.model_script_judge``) so that the generator and evaluator are
 decoupled — a pattern that improves reliability by preventing the generator
 from self-approving its own mistakes.
-
-Workflow position::
-
-    script_validator ──► script_judge ──► script_judge_router
-                                              │          │
-                                           VALID      INVALID
-                                              │          │
-                                    persist_and_respond  script_generator
-                                                         (retry with feedback)
 
 Key design decisions:
 

@@ -17,13 +17,6 @@ and acts as a quality gate for the generated A2UI JSON. Its responsibilities:
 The validated schema is persisted in workflow state (``a2ui_schema``) so that
 downstream nodes (``script_judge``, ``persist_and_respond``) can consume it
 without re-parsing.
-
-Workflow edges::
-
-    ui_schema_generator ──► [ui_schema_validator] ──VALID──► JoinNode
-                                     │
-                                     ├──RETRY──► ui_schema_generator
-                                     └──FAIL───► generation_failed
 """
 
 import re

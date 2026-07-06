@@ -1,23 +1,16 @@
 """Sandbox Check — optional startup health-check Function Node.
 
+A debug option that verifies the sandbox execution environment is healthy 
+before starting any agent workflow.
+
 This is a deterministic (non-LLM) workflow node that sits at the very
 beginning of the calculator generation workflow graph. When the feature
 flag ``settings.check_sandbox_on_start`` is enabled, the workflow edge
 graph wires START → sandbox_check → blueprint_generator; otherwise
 START connects directly to blueprint_generator and this node is skipped.
 
-Workflow position::
-
-    START ──► sandbox_check ──┬─ "OK"   ──► blueprint_generator
-                              └─ "FAIL" ──► generation_failed
-
-The node performs two duties:
-1. **Extract the user prompt** from ``node_input``, normalising the
-   several formats the ADK framework may use (see inline comments).
-2. **Verify sandbox health** by executing ``print('ok')`` inside a
-   GKE gVisor pod via :func:`~app.services.sandbox_executor.check_sandbox`.
-   A healthy sandbox is a prerequisite for the later script_validator
-   node, which runs user-generated Python in the same environment.
+The node verifies sandbox health by executing ``print('ok')`` inside a
+GKE gVisor pod via :func:`~app.services.sandbox_executor.check_sandbox`.
 """
 
 from google.adk.workflow import node

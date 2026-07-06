@@ -5,13 +5,6 @@ raw natural-language prompt and produces a ``CalculatorBlueprint`` — a structu
 Pydantic model that becomes the **single source of truth** consumed by every
 downstream node (script_generator, ui_schema_generator, script_judge, etc.).
 
-Workflow position::
-
-    [user prompt] ──▶ blueprint_generator ──▶ intent_router ──▶ ...
-                                                   │
-                             is_calculator=False ◀──┘──▶ is_calculator=True
-                             (reject request)          (continue pipeline)
-
 Dual purpose — intent routing:
     The ``CalculatorBlueprint.is_calculator`` flag doubles as the intent signal.
     If the user's prompt is *not* about building a calculator (e.g. "tell me a
@@ -19,13 +12,6 @@ Dual purpose — intent routing:
     ``intent_router`` function node short-circuits the workflow with a polite
     rejection. This keeps intent classification co-located with blueprint
     generation so the model only needs a single inference call.
-
-Why a strong reasoning model (``model_reasoning``)?
-    Blueprint quality directly determines the quality of *all* generated
-    artifacts (script, UI schema, tests). A weaker model here causes cascading
-    failures that no amount of downstream retries can fix — garbage-in,
-    garbage-out. The reasoning model is typically the most capable (and most
-    expensive) model in the configuration.
 
 Output storage:
     ``output_key="blueprint"`` causes ADK to store the structured output in
@@ -42,8 +28,7 @@ from ..config import settings
 # ---------------------------------------------------------------------------
 # Blueprint Generator Agent Node
 # ---------------------------------------------------------------------------
-# This is an LLM-powered ADK Agent (as opposed to a deterministic Function
-# node). ADK will invoke the model specified by `settings.model_reasoning`,
+# ADK will invoke the model specified by `settings.model_reasoning`,
 # feed it the `instruction` prompt plus the user's message, and parse the
 # response into the `output_schema` (CalculatorBlueprint).
 # ---------------------------------------------------------------------------
