@@ -23,7 +23,7 @@
   - [Setup](#setup)
 - [Deployment (GKE / Google Cloud Platform)](#deployment-gke--google-cloud-platform)
   - [Prerequisites](#prerequisites-1)
-  - [Instructions](#instructions)
+  - [Setup](#setup-1)
 - [Client Integration](#client-integration)
 
 ## Overview
@@ -83,9 +83,10 @@ Step-by-step breakdown of the agentic workflow:
 - **Join Calculator ID & UI Schema** *(Function Node)*: Constructs the final JSON payload containing the new Calculator ID and Schema.
 
 **External API Endpoints**:
-- **Evaluate Inputs** (`POST /evaluate/{id}`): Retrieves the calculator script, injects the user's inputs, executes it securely in the GKE sandbox, and returns the computed result.
-- **Fetch Schema** (`GET /schema/{id}`): Retrieves the A2UI schema for a specific calculator from Firestore.
-- **Create Session** (`POST /sessions`): Generates and returns a unique session ID, natively provided by the ADK framework.
+- **Call the Agent**: Triggers the agent's calculator generation pipeline and returns a Server-Sent Events (SSE) stream to report real-time progress.
+- **Evaluate Inputs**: Retrieves the calculator script, injects the user's inputs, executes it securely in the GKE sandbox, and returns the computed result.
+- **Fetch Schema**: Retrieves the A2UI schema for a specific calculator from Firestore.
+- **Create Session**: Generates and returns a unique session ID, natively provided by the ADK framework.
 
 ---
 
@@ -188,7 +189,7 @@ You can toggle the following operational behaviors inside the `LocalConfig` and 
 *   The `agents-cli` installed globally (`uv tool install google-agents-cli`).
 *   **Database** created and configured for Firestore (see [Database Setup](#database-setup)).
 
-### Instructions
+### Setup
 Because this project is heavily scaffolded using the ADK framework, everything is completely **Terraform configured**. This includes the GKE cluster, Artifact Registry, Storage Buckets, and all necessary IAM permissions and Service Accounts. All infrastructure and resources will be automatically created with the base name `calc-agent` on GKE.
 
 To deploy the entire stack from scratch to a new GCP project, simply run:
@@ -210,7 +211,7 @@ The API provides four primary endpoints for frontends and external clients to bu
    Establishes a user session to track context before triggering the AI agent.
 2. **Call the Agent** (`POST /run_sse`)
    Triggers the agent's calculator generation pipeline and returns a Server-Sent Events (SSE) stream to report real-time progress.
-3. **Retrieve Schema** (`GET /schema/{calculator_id}`)
+3. **Fetch Schema** (`GET /schema/{calculator_id}`)
    Fetches the declarative A2UI layout and validation rules for a previously generated calculator.
 4. **Evaluate Inputs** (`POST /evaluate/{calculator_id}`)
    Submits user form inputs to execute the generated calculator's Python logic securely in the sandbox and returns the math results.
