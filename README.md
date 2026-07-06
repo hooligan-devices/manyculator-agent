@@ -124,13 +124,25 @@ The agent persists all generated calculator scripts and UI schemas to a database
    * Choose **Native mode** and select your preferred region.
 3. **Authentication**: The backend connects automatically using ADC. As long as you have completed the `gcloud auth application-default login` step above and your Google user has Firestore read/write permissions, the connection will succeed without extra configuration.
 
-### Option B: Local JSON File (Testing)
-If you want to bypass Google Cloud entirely for local development, you can swap the database layer to write to a local `calculators_db.json` file.
+### Option B: Local Development & Testing
+If you want to bypass Google Cloud entirely for rapid local development, you must toggle two storage layers: the Calculators Database and the ADK Session Store.
+
+**1. Swap to Local Calculators Database**
+This changes the generated calculator script storage to use a local `calculators_db.json` file instead of Firestore.
 1. Navigate to the `app/` directory.
 2. Backup the existing Firestore store:
    `mv calculator_store.py calculator_store.py.backup`
 3. Swap the files by renaming the local version:
    `mv calculator_store_local.py calculator_store.py`
+
+**2. Swap to In-Memory Session Store**
+This changes the ADK session tracking to use local RAM instead of Firestore.
+1. Open `app/fast_api_app.py`.
+2. Comment out `session_service_uri = "firestore://default"`.
+3. Uncomment `session_service_uri = "memory://shared"`.
+
+> [!WARNING]
+> **Never use `memory://shared` in a production cloud deployment (like Cloud Run or GKE).** Production deployments utilize load balancers and run multiple worker processes (or replicas). Because in-memory sessions are strictly bound to a single worker's isolated RAM, a multi-worker environment will randomly route sequential requests (like connecting to the SSE stream) to different workers, resulting in fatal "Session not found" 404 errors.
 
 ---
 

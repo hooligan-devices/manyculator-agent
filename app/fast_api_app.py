@@ -36,8 +36,11 @@ allow_origins = (
 logs_bucket_name = os.environ.get("LOGS_BUCKET_NAME")
 
 AGENT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# ADK session configuration - use custom Firestore service
+# ADK session configuration
+# Default: Use custom Firestore service for persistent sessions (required for multi-worker cloud deployments)
 session_service_uri = "firestore://default"
+# Local Testing: Uncomment the line below to switch to in-memory RAM sessions (fast, but causes 404s in multi-worker environments)
+# session_service_uri = "memory://shared"
 
 artifact_service_uri = f"gs://{logs_bucket_name}" if logs_bucket_name else None
 
