@@ -26,6 +26,7 @@ def mock_store(monkeypatch):
     monkeypatch.setattr("app.calculator_store.store", fake_store)
     # The endpoint uses crud_tools.get_calculator, which relies on crud_tools.store
     monkeypatch.setattr("app.tools.crud_tools.store", fake_store)
+    monkeypatch.setattr("app.fast_api_app.store", fake_store)
     
     # We must yield the fake store so the saved_calculator fixture can use it
     yield fake_store

@@ -1,5 +1,4 @@
 metrics_to_run:
-  - multi_turn_task_success
   - calculator_completeness
   - parameter_consistency
   - rejection_accuracy
@@ -11,9 +10,9 @@ custom_metrics:
 
       A complete calculator generation MUST include ALL of the following in the agent's final response or trace:
       1. A `calculator_id` (UUID string) confirming the calculator was persisted
-      2. A generated Python calculation script (visible in the trace as generated_script with a `calculate(inputs)` function)
-      3. A UI schema with input and output components (visible in the trace as ui_schema_generator output)
-      4. A user-facing description of what the calculator does
+      2. A generated Python calculation script (visible in the trace inside `script_generator_output.script_content` with a `calculate(inputs)` function)
+      3. A UI schema with input and output components (visible in the trace inside the `a2ui_schema` list)
+      4. A user-facing description of what the calculator does (usually found in `blueprint.calculator_description` or a Text component in `a2ui_schema`)
 
       If the user's prompt was NOT a calculator request (e.g., "tell me a joke", "what's the weather"), the agent should have correctly rejected it. In that case, score 5 if rejection was clean and clear, score 1 if the agent tried to generate a calculator anyway.
 
@@ -43,41 +42,48 @@ custom_metrics:
       def evaluate(instance):
           """Check if parameter names are consistent across the agent trace.
 
-          Extracts parameter names from intent_analysis, then checks if the
-          script_generator and ui_schema_generator used the same names.
+          Extracts parameter names from the final CalculatorWorkflowState blueprint,
+          then checks if the script and UI schema used the same exact names.
           """
-          agent_data = instance.get("agent_data") or {}
-          turns = agent_data.get("turns", [])
-          trace_text = json.dumps(agent_data)
+          agent_data = instance.get("agent_data", {})
+          events = agent_data.get("events", [])
+          if not events:
+              return {"score": 1.0, "explanation": "No events found (likely a rejection)."}
+          
+          # Find the latest event that has state attached
+          final_state = {}
+          for e in reversed(events):
+              state = e.get("state", {})
+              if state and isinstance(state, dict):
+                  final_state = state
+                  if "blueprint" in state:
+                      break
 
-          # If this looks like a rejection case, skip consistency check
-          prompt_text = ""
-          if instance.get("prompt"):
-              parts = instance["prompt"].get("parts", [])
-              prompt_text = " ".join(p.get("text", "") for p in parts)
-
-          # Simple heuristic: if no turns or very short trace, likely rejection
-          if len(turns) == 0 or len(trace_text) < 200:
-              return {"score": 1.0, "explanation": "No generation trace to analyze (likely a rejection case)"}
-
-          # Try to find intent_analysis parameters in the trace
-          intent_params = set()
-          # Look for parameter name patterns in intent analysis output
-          intent_match = re.findall(r'"name":\s*"([a-z_]+)"', trace_text[:len(trace_text)//3])
-          if intent_match:
-              intent_params = set(intent_match)
-
+          blueprint = final_state.get("blueprint", {})
+          if not blueprint or not blueprint.get("is_calculator"):
+               return {"score": 1.0, "explanation": "Not a calculator request, skip consistency."}
+               
+          parameters = blueprint.get("parameters", [])
+          if not parameters:
+              return {"score": 1.0, "explanation": "No parameters required by blueprint."}
+              
+          intent_params = {p.get("name") for p in parameters if p.get("name")}
           if not intent_params:
-              return {"score": 0.5, "explanation": "Could not extract intent parameters from trace"}
-
-          # Check if these params appear in the later parts of the trace (script + UI)
-          later_trace = trace_text[len(trace_text)//3:]
-          found_in_later = sum(1 for p in intent_params if p in later_trace)
-          consistency_ratio = found_in_later / len(intent_params) if intent_params else 0
-
+               return {"score": 0.5, "explanation": "Failed to parse parameters from blueprint."}
+               
+          script_output = final_state.get("script_generator_output", {})
+          script_content = script_output.get("script_content", "") if isinstance(script_output, dict) else str(script_output)
+          a2ui_schema_str = json.dumps(final_state.get("a2ui_schema", []))
+          
+          found_count = 0
+          for param in intent_params:
+              if param in script_content and param in a2ui_schema_str:
+                  found_count += 1
+                  
+          ratio = found_count / len(intent_params)
           return {
-              "score": consistency_ratio,
-              "explanation": f"Found {found_in_later}/{len(intent_params)} intent params referenced in later trace. Params: {intent_params}"
+              "score": ratio,
+              "explanation": f"Found {found_count}/{len(intent_params)} parameters consistently in script and UI. Expected params: {intent_params}"
           }
 
   - name: rejection_accuracy

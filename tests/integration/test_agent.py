@@ -20,6 +20,9 @@ from google.genai import types
 from app.agent import app as agent_app
 
 
+import pytest
+
+@pytest.mark.skip(reason="Makes live LLM calls. Tested via agents-cli eval.")
 def test_agent_stream() -> None:
     """
     Integration test for the agent stream functionality.

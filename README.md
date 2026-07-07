@@ -21,6 +21,7 @@
 - [Getting Started (Local Development)](#getting-started-local-development)
   - [Prerequisites](#prerequisites)
   - [Setup](#setup)
+- [Testing](#testing)
 - [Deployment (GKE / Google Cloud Platform)](#deployment-gke--google-cloud-platform)
   - [Prerequisites](#prerequisites-1)
   - [Setup](#setup-1)
@@ -191,6 +192,28 @@ You can toggle the following operational behaviors inside the `LocalConfig` and 
    * **Interactive Playground**: You can instantly chat with the agent and test the UI by visiting the built-in playground at `http://127.0.0.1:8000/dev-ui/?app=app`. 
      * *Note:* Because the `web=True` flag is preset in `app/fast_api_app.py`, you do **not** need to run the `agents-cli playground` command explicitly; the dev-ui is bundled directly into the FastAPI server.
      * *Note:* To use the dev-ui playground correctly, ensure you have the `google-agents-cli` installed globally. If you haven't installed it yet, run: `uv tool install google-agents-cli`.
+
+---
+
+## Testing
+
+The project includes a comprehensive testing suite covering deterministic logic, server integration, and LLM behavior evaluation.
+
+### Unit & Integration Tests
+These tests run deterministically and do not make live LLM calls. They verify the integrity of the routing, custom FastAPI endpoints, and session management.
+```bash
+# Run all unit and integration tests
+uv run pytest tests/unit tests/integration
+```
+
+### Agent Evaluation (Evals)
+Because agentic workflows are non-deterministic, we use the ADK Evaluation framework (LLM-as-a-judge) to measure the quality of the generated calculators. The evaluation runs the agent against a suite of dataset prompts and scores the output based on custom rubrics (e.g., `calculator_completeness`, `parameter_consistency`).
+
+```bash
+# Generate traces and grade the agent against the dataset
+agents-cli eval run --dataset tests/eval/datasets/basic-dataset.json --config tests/eval/eval_config.yaml
+```
+*Note: Running evaluations will make live LLM calls and may incur API costs. Ensure your GCP credentials and environment variables are properly configured.*
 
 ---
 

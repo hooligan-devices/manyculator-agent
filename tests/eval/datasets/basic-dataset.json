@@ -41,6 +41,20 @@
         "role": "user",
         "parts": [{"text": "Tell me a joke about programming"}]
       }
+    },
+    {
+      "eval_case_id": "edge_case_math",
+      "prompt": {
+        "role": "user",
+        "parts": [{"text": "Create a calculator that divides X by Y. Make sure it doesn't crash if Y is zero."}]
+      }
+    },
+    {
+      "eval_case_id": "complex_schema",
+      "prompt": {
+        "role": "user",
+        "parts": [{"text": "Create a loan calculator that asks for loan amount, interest rate, and a dropdown choice for compounding frequency (monthly, quarterly, annually). Output the total payment."}]
+      }
     }
   ]
 }

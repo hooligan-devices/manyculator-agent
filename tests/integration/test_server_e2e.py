@@ -122,6 +122,7 @@ def server_fixture(request: Any) -> Iterator[subprocess.Popen[str]]:
     yield server_process
 
 
+@pytest.mark.skip(reason="Makes live LLM calls via subprocess. Tested via agents-cli eval.")
 def test_adk_run_sse(server_fixture: subprocess.Popen[str]) -> None:
     """Test the native ADK route (/run_sse) end to end."""
     logger.info("Starting ADK /run_sse test")

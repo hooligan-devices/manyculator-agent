@@ -1,0 +1,626 @@
+{
+  "eval_cases": [
+    {
+      "prompt": {
+        "parts": [
+          {
+            "text": "Create a tip calculator. I want to enter the bill amount and tip percentage, and see the tip amount and total."
+          }
+        ],
+        "role": "user"
+      },
+      "responses": [
+        {
+          "response": {
+            "parts": [
+              {
+                "text": "{\n  \"verdict\": \"VALID\"\n}"
+              }
+            ],
+            "role": "model"
+          }
+        }
+      ],
+      "eval_case_id": "simple_percentage",
+      "agent_data": {
+        "agents": {
+          "calculator_generator": {
+            "agent_id": "calculator_generator",
+            "agent_type": "Workflow",
+            "description": "",
+            "tools": [],
+            "sub_agents": []
+          }
+        },
+        "turns": [
+          {
+            "turn_index": 0,
+            "turn_id": "turn_0",
+            "events": [
+              {
+                "author": "blueprint_generator",
+                "content": {
+                  "parts": [
+                    {
+                      "text": "{\"is_calculator\": true, \"reasoning\": \"The user wants to calculate a tip and the total bill amount based on an initial bill and a chosen tip percentage, which represents a standard calculator utility.\", \"calculator_name\": \"Tip Calculator\", \"calculator_description\": \"Calculate the tip amount and total bill cost based on your bill total and desired tip percentage.\", \"parameters\": [{\"name\": \"bill_amount\", \"kind\": \"input\", \"component_type\": \"TextField\", \"keyboard_type\": \"number\", \"validation\": {\"min_value\": 0.0, \"max_value\": 1000000.0, \"step\": 0.01, \"required\": true}}, {\"name\": \"tip_percentage\", \"kind\": \"input\", \"component_type\": \"Slider\", \"min_value\": 0, \"max_value\": 100, \"step\": 1, \"data_type\": \"number\"}, {\"name\": \"tip_amount\", \"kind\": \"result\", \"component_type\": \"Result\", \"data_type\": \"number\"}, {\"name\": \"total_amount\", \"kind\": \"result\", \"component_type\": \"Result\", \"data_type\": \"number\"}], \"computation_logic\": \"1. Retrieve the input values: bill_amount and tip_percentage.\\n2. Verify that bill_amount is non-negative.\\n3. Compute tip_amount = bill_amount * (tip_percentage / 100.0).\\n4. Compute total_amount = bill_amount + tip_amount.\\n5. Round both results to exactly 2 decimal places using standard Python round() function.\", \"edge_cases\": [\"Negative bill amounts: Must throw an error.\", \"Zero bill amount: Should calculate $0.00 tip and $0.00 total.\", \"Very large numbers: Verify values do not cause overflow.\"], \"error_handling_strategy\": \"If input validation fails (e.g., negative bill), return a dictionary with the exact structure: {'error': 'Invalid Input: Bill amount must be greater than or equal to 0'}\"}"
+                    }
+                  ],
+                  "role": "model"
+                }
+              },
+              {
+                "author": "script_generator",
+                "content": {
+                  "parts": [
+                    {
+                      "text": "{\n  \"script_content\": \"def calculate(inputs: dict) -> dict:\\n    # Default fallback values for results\\n    fallback_results = {\\n        \\\"tip_amount\\\": 0.0,\\n        \\\"total_amount\\\": 0.0\\n    }\\n    \\n    try:\\n        # Ensure we have bill_amount\\n        if \\\"bill_amount\\\" not in inputs or inputs[\\\"bill_amount\\\"] is None:\\n            return {\\n                \\\"error\\\": \\\"Invalid Input: Bill amount is required\\\",\\n                **fallback_results\\n            }\\n        \\n        # Safely convert to float\\n        bill_amount = float(inputs[\\\"bill_amount\\\"])\\n        \\n        # Handle tip_percentage (default to 0.0 if not provided)\\n        tip_percentage = float(inputs.get(\\\"tip_percentage\\\", 0.0))\\n        \\n    except (ValueError, TypeError):\\n        return {\\n            \\\"error\\\": \\\"Invalid Input: Please provide valid numbers for inputs\\\",\\n            **fallback_results\\n        }\\n    \\n    # Validate non-negative bill amount\\n    if bill_amount < 0.0:\\n        return {\\n            \\\"error\\\": \\\"Invalid Input: Bill amount must be greater than or equal to 0\\\",\\n            **fallback_results\\n        }\\n    \\n    # Validate non-negative tip percentage\\n    if tip_percentage < 0.0:\\n        return {\\n            \\\"error\\\": \\\"Invalid Input: Tip percentage cannot be negative\\\",\\n            **fallback_results\\n        }\\n    \\n    # Compute tip and total\\n    tip_amount = bill_amount * (tip_percentage / 100.0)\\n    total_amount = bill_amount + tip_amount\\n    \\n    # Round to exactly 2 decimal places\\n    tip_amount_rounded = round(tip_amount, 2)\\n    total_amount_rounded = round(total_amount, 2)\\n    \\n    return {\\n        \\\"tip_amount\\\": tip_amount_rounded,\\n        \\\"total_amount\\\": total_amount_rounded\\n    }\"\n}"
+                    }
+                  ],
+                  "role": "model"
+                }
+              },
+              {
+                "author": "ui_schema_generator",
+                "content": {
+                  "parts": [
+                    {
+                      "text": "<a2ui-json>\n[\n  {\n    \"version\": \"v0.9\",\n    \"updateComponents\": {\n      \"surfaceId\": \"calculator-surface\",\n      \"components\": [\n        {\n          \"id\": \"title-text\",\n          \"component\": \"Text\",\n          \"variant\": \"h4\",\n          \"text\": \"Tip Calculator\"\n        },\n        {\n          \"id\": \"description-text\",\n          \"component\": \"Text\",\n          \"variant\": \"body\",\n          \"text\": \"Calculate the tip amount and total bill cost based on your bill total and desired tip percentage.\"\n        },\n        {\n          \"id\": \"root\",\n          \"component\": \"Column\",\n          \"children\": [\n            \"main-card\"\n          ]\n        },\n        {\n          \"id\": \"main-card\",\n          \"component\": \"Card\",\n          \"child\": \"main-column\"\n        },\n        {\n          \"id\": \"main-column\",\n          \"component\": \"Column\",\n          \"children\": [\n            \"title-text\",\n            \"description-text\",\n            \"bill-amount-input\",\n            \"tip-percentage-label\",\n            \"tip-percentage-slider\",\n            \"calculate-button\",\n            \"results-card\"\n          ]\n        },\n        {\n          \"id\": \"bill-amount-input\",\n          \"component\": \"TextField\",\n          \"label\": \"Bill Amount ($)\",\n          \"variant\": \"number\",\n          \"value\": {\n            \"path\": \"/bill_amount\"\n          },\n          \"checks\": [\n            {\n              \"condition\": {\n                \"call\": \"required\",\n                \"args\": {\n                  \"value\": {\n                    \"path\": \"/bill_amount\"\n                  }\n                }\n              },\n              \"message\": \"Bill amount is required.\"\n            },\n            {\n              \"condition\": {\n                \"call\": \"numeric\",\n                \"args\": {\n                  \"value\": {\n                    \"path\": \"/bill_amount\"\n                  },\n                  \"min\": 0.0,\n                  \"max\": 1000000.0\n                }\n              },\n              \"message\": \"Bill amount must be between 0.00 and 1,000,000.00.\"\n            }\n          ]\n        },\n        {\n          \"id\": \"tip-percentage-label\",\n          \"component\": \"Text\",\n          \"variant\": \"caption\",\n          \"text\": \"Tip Percentage (%)\"\n        },\n        {\n          \"id\": \"tip-percentage-slider\",\n          \"component\": \"Slider\",\n          \"label\": \"Tip Percentage\",\n          \"min\": 0,\n          \"max\": 100,\n          \"value\": {\n            \"path\": \"/tip_percentage\"\n          }\n        },\n        {\n          \"id\": \"calculate-button\",\n          \"component\": \"Button\",\n          \"variant\": \"primary\",\n          \"child\": \"calculate-button-text\",\n          \"action\": {\n            \"event\": {\n              \"name\": \"calculate\",\n              \"context\": {\n                \"bill_amount\": {\n                  \"path\": \"/bill_amount\"\n                },\n                \"tip_percentage\": {\n                  \"path\": \"/tip_percentage\"\n                }\n              }\n            }\n          }\n        },\n        {\n          \"id\": \"calculate-button-text\",\n          \"component\": \"Text\",\n          \"text\": \"Calculate Tip\"\n        },\n        {\n          \"id\": \"results-card\",\n          \"component\": \"Card\",\n          \"child\": \"results-column\"\n        },\n        {\n          \"id\": \"results-column\",\n          \"component\": \"Column\",\n          \"children\": [\n            \"tip-amount-row\",\n            \"total-amount-row\"\n          ]\n        },\n        {\n          \"id\": \"tip-amount-row\",\n          \"component\": \"Row\",\n          \"justify\": \"spaceBetween\",\n          \"children\": [\n            \"tip-amount-label\",\n            \"tip-amount-value\"\n          ]\n        },\n        {\n          \"id\": \"tip-amount-label\",\n          \"component\": \"Text\",\n          \"text\": \"Tip Amount\"\n        },\n        {\n          \"id\": \"tip-amount-value\",\n          \"component\": \"Text\",\n          \"text\": {\n            \"path\": \"/tip_amount\"\n          }\n        },\n        {\n          \"id\": \"total-amount-row\",\n          \"component\": \"Row\",\n          \"justify\": \"spaceBetween\",\n          \"children\": [\n            \"total-amount-label\",\n            \"total-amount-value\"\n          ]\n        },\n        {\n          \"id\": \"total-amount-label\",\n          \"component\": \"Text\",\n          \"text\": \"Total Bill\"\n        },\n        {\n          \"id\": \"total-amount-value\",\n          \"component\": \"Text\",\n          \"text\": {\n            \"path\": \"/total_amount\"\n          }\n        }\n      ]\n    }\n  },\n  {\n    \"version\": \"v0.9\",\n    \"updateDataModel\": {\n      \"surfaceId\": \"calculator-surface\",\n      \"value\": {\n        \"bill_amount\": 50.0,\n        \"tip_percentage\": 15,\n        \"tip_amount\": null,\n        \"total_amount\": null\n      }\n    }\n  }\n]\n</a2ui-json>"
+                    }
+                  ],
+                  "role": "model"
+                }
+              },
+              {
+                "author": "script_judge",
+                "content": {
+                  "parts": [
+                    {
+                      "text": "{\n  \"verdict\": \"VALID\"\n}"
+                    }
+                  ],
+                  "role": "model"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "prompt": {
+        "parts": [
+          {
+            "text": "Build a converter from kilograms to pounds. Just one input for kg and one output for pounds."
+          }
+        ],
+        "role": "user"
+      },
+      "responses": [
+        {
+          "response": {
+            "parts": [
+              {
+                "text": "{\n  \"verdict\": \"VALID\"\n}"
+              }
+            ],
+            "role": "model"
+          }
+        }
+      ],
+      "eval_case_id": "unit_conversion",
+      "agent_data": {
+        "agents": {
+          "calculator_generator": {
+            "agent_id": "calculator_generator",
+            "agent_type": "Workflow",
+            "description": "",
+            "tools": [],
+            "sub_agents": []
+          }
+        },
+        "turns": [
+          {
+            "turn_index": 0,
+            "turn_id": "turn_0",
+            "events": [
+              {
+                "author": "blueprint_generator",
+                "content": {
+                  "parts": [
+                    {
+                      "text": "{\n  \"is_calculator\": true,\n  \"reasoning\": \"The user wants a simple converter to transform weight in kilograms to pounds with one input and one output.\",\n  \"calculator_name\": \"Kilograms to Pounds Converter\",\n  \"calculator_description\": \"A straightforward tool to instantly convert weight from kilograms (kg) to pounds (lbs).\",\n  \"parameters\": [\n    {\n      \"name\": \"weight_kg\",\n      \"kind\": \"input\",\n      \"component_type\": \"TextField\",\n      \"keyboard_type\": \"number\",\n      \"validation\": {\n        \"min_value\": 0,\n        \"max_value\": 1000000,\n        \"step\": 0.01,\n        \"required\": true,\n        \"pattern\": null\n      },\n      \"options\": null,\n      \"is_multi\": null,\n      \"min_value\": null,\n      \"max_value\": null,\n      \"step\": null,\n      \"data_type\": null\n    },\n    {\n      \"name\": \"weight_lbs\",\n      \"kind\": \"result\",\n      \"component_type\": \"Result\",\n      \"keyboard_type\": null,\n      \"validation\": null,\n      \"options\": null,\n      \"is_multi\": null,\n      \"min_value\": null,\n      \"max_value\": null,\n      \"step\": null,\n      \"data_type\": \"number\"\n    }\n  ],\n  \"computation_logic\": \"Multiply the input kilograms (weight_kg) by exactly 2.20462262185 to convert to pounds. Round the final output to 2 decimal places using standard Python round().\",\n  \"edge_cases\": [\n    \"Weight in kilograms cannot be negative.\",\n    \"Non-numeric values must raise an error.\"\n  ],\n  \"error_handling_strategy\": \"Return an error dictionary exactly structured as {'error': 'Invalid Input: Weight must be a non-negative number'} if validation fails or weight_kg < 0.\"\n}"
+                    }
+                  ],
+                  "role": "model"
+                }
+              },
+              {
+                "author": "script_generator",
+                "content": {
+                  "parts": [
+                    {
+                      "text": "{\n  \"script_content\": \"def calculate(inputs: dict) -> dict:\\n    # Initialize result key to a fallback value\\n    result = {\\\"weight_lbs\\\": 0.0}\\n    \\n    try:\\n        # Ensure parameter weight_kg is present and cast to float\\n        if \\\"weight_kg\\\" not in inputs or inputs[\\\"weight_kg\\\"] is None:\\n            return {\\\"error\\\": \\\"Invalid Input: Weight must be a non-negative number\\\", \\\"weight_lbs\\\": 0.0}\\n            \\n        weight_kg = float(inputs[\\\"weight_kg\\\"])\\n        \\n        # Validation check for non-negative values\\n        if weight_kg < 0.0:\\n            return {\\\"error\\\": \\\"Invalid Input: Weight must be a non-negative number\\\", \\\"weight_lbs\\\": 0.0}\\n            \\n        # Perform computation as per blueprint\\n        # Multiply weight_kg by exactly 2.20462262185 and round to 2 decimal places\\n        weight_lbs = round(weight_kg * 2.20462262185, 2)\\n        \\n        result[\\\"weight_lbs\\\"] = weight_lbs\\n        return result\\n        \\n    except (ValueError, TypeError):\\n        return {\\\"error\\\": \\\"Invalid Input: Weight must be a non-negative number\\\", \\\"weight_lbs\\\": 0.0}\\n\"\n}"
+                    }
+                  ],
+                  "role": "model"
+                }
+              },
+              {
+                "author": "ui_schema_generator",
+                "content": {
+                  "parts": [
+                    {
+                      "text": "<a2ui-json>\n[\n  {\n    \"version\": \"v0.9\",\n    \"updateComponents\": {\n      \"surfaceId\": \"calculator-surface\",\n      \"components\": [\n        {\n          \"id\": \"title-text\",\n          \"component\": \"Text\",\n          \"variant\": \"h4\",\n          \"text\": \"Kilograms to Pounds Converter\"\n        },\n        {\n          \"id\": \"description-text\",\n          \"component\": \"Text\",\n          \"variant\": \"body\",\n          \"text\": \"A straightforward tool to instantly convert weight from kilograms (kg) to pounds (lbs).\"\n        },\n        {\n          \"id\": \"root\",\n          \"component\": \"Column\",\n          \"children\": [\n            \"main-card\"\n          ]\n        },\n        {\n          \"id\": \"main-card\",\n          \"component\": \"Card\",\n          \"child\": \"main-column\"\n        },\n        {\n          \"id\": \"main-column\",\n          \"component\": \"Column\",\n          \"children\": [\n            \"title-text\",\n            \"description-text\",\n            \"input-row\",\n            \"calculate-button\",\n            \"results-card\"\n          ]\n        },\n        {\n          \"id\": \"input-row\",\n          \"component\": \"Row\",\n          \"align\": \"center\",\n          \"children\": [\n            \"weight-kg-input\"\n          ]\n        },\n        {\n          \"id\": \"weight-kg-input\",\n          \"component\": \"TextField\",\n          \"label\": \"Weight (kg)\",\n          \"variant\": \"number\",\n          \"value\": {\n            \"path\": \"/weight_kg\"\n          },\n          \"weight\": 1,\n          \"checks\": [\n            {\n              \"condition\": {\n                \"call\": \"required\",\n                \"args\": {\n                  \"value\": {\n                    \"path\": \"/weight_kg\"\n                  }\n                }\n              },\n              \"message\": \"Weight in kilograms is required.\"\n            },\n            {\n              \"condition\": {\n                \"call\": \"numeric\",\n                \"args\": {\n                  \"value\": {\n                    \"path\": \"/weight_kg\"\n                  },\n                  \"min\": 0.0,\n                  \"max\": 1000000.0\n                }\n              },\n              \"message\": \"Weight must be between 0.0 and 1,000,000.0 kg.\"\n            }\n          ]\n        },\n        {\n          \"id\": \"calculate-button\",\n          \"component\": \"Button\",\n          \"variant\": \"primary\",\n          \"child\": \"calculate-button-text\",\n          \"action\": {\n            \"event\": {\n              \"name\": \"calculate\",\n              \"context\": {\n                \"weight_kg\": {\n                  \"path\": \"/weight_kg\"\n                }\n              }\n            }\n          }\n        },\n        {\n          \"id\": \"calculate-button-text\",\n          \"component\": \"Text\",\n          \"text\": \"Convert to Pounds\"\n        },\n        {\n          \"id\": \"results-card\",\n          \"component\": \"Card\",\n          \"child\": \"results-column\"\n        },\n        {\n          \"id\": \"results-column\",\n          \"component\": \"Column\",\n          \"children\": [\n            \"lbs-result-row\"\n          ]\n        },\n        {\n          \"id\": \"lbs-result-row\",\n          \"component\": \"Row\",\n          \"justify\": \"spaceBetween\",\n          \"children\": [\n            \"lbs-result-label\",\n            \"lbs-result-value\"\n          ]\n        },\n        {\n          \"id\": \"lbs-result-label\",\n          \"component\": \"Text\",\n          \"text\": \"Weight (lbs)\"\n        },\n        {\n          \"id\": \"lbs-result-value\",\n          \"component\": \"Text\",\n          \"text\": {\n            \"path\": \"/weight_lbs\"\n          }\n        }\n      ]\n    }\n  },\n  {\n    \"version\": \"v0.9\",\n    \"updateDataModel\": {\n      \"surfaceId\": \"calculator-surface\",\n      \"value\": {\n        \"weight_kg\": 1.0,\n        \"weight_lbs\": null\n      }\n    }\n  }\n]\n</a2ui-json>"
+                    }
+                  ],
+                  "role": "model"
+                }
+              },
+              {
+                "author": "script_judge",
+                "content": {
+                  "parts": [
+                    {
+                      "text": "{\n  \"verdict\": \"VALID\"\n}"
+                    }
+                  ],
+                  "role": "model"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "prompt": {
+        "parts": [
+          {
+            "text": "Make a BMI calculator. It should take height in centimeters and weight in kilograms, then show the BMI value."
+          }
+        ],
+        "role": "user"
+      },
+      "responses": [
+        {
+          "response": {
+            "parts": [
+              {
+                "text": "{\n  \"verdict\": \"VALID\"\n}"
+              }
+            ],
+            "role": "model"
+          }
+        }
+      ],
+      "eval_case_id": "multi_param_formula",
+      "agent_data": {
+        "agents": {
+          "calculator_generator": {
+            "agent_id": "calculator_generator",
+            "agent_type": "Workflow",
+            "description": "",
+            "tools": [],
+            "sub_agents": []
+          }
+        },
+        "turns": [
+          {
+            "turn_index": 0,
+            "turn_id": "turn_0",
+            "events": [
+              {
+                "author": "blueprint_generator",
+                "content": {
+                  "parts": [
+                    {
+                      "text": "{\"is_calculator\":true,\"reasoning\":\"The user wants a BMI calculator that takes height in centimeters and weight in kilograms to compute the Body Mass Index. The reasoning is clear and falls under standard medical calculations. High-level steps involve extracting inputs, validating ranges, converting height to meters, applying the standard formula (weight / height_m^2), and returning the formatted BMI result.\",\"calculator_name\":\"BMI Calculator\",\"calculator_description\":\"Calculates Body Mass Index (BMI) using height in centimeters and weight in kilograms.\",\"parameters\":[{\"name\":\"height_cm\",\"kind\":\"input\",\"component_type\":\"TextField\",\"keyboard_type\":\"number\",\"validation\":{\"min_value\":1,\"max_value\":300,\"step\":0.1,\"required\":true}},{\"name\":\"weight_kg\",\"kind\":\"input\",\"component_type\":\"TextField\",\"keyboard_type\":\"number\",\"validation\":{\"min_value\":1,\"max_value\":1000,\"step\":0.1,\"required\":true}},{\"name\":\"bmi_value\",\"kind\":\"result\",\"component_type\":\"Result\",\"data_type\":\"number\"}],\"computation_logic\":\"1. Validate that 'height_cm' and 'weight_kg' are present and within valid ranges.\\n2. Convert 'height_cm' to meters: height_m = height_cm / 100.0\\n3. Calculate BMI: bmi = weight_kg / (height_m * height_m)\\n4. Round the final BMI value to exactly 2 decimal places using standard Python round().\\n5. Return the result in a dictionary with the key 'bmi_value'.\",\"edge_cases\":[\"Height is 0 or negative (leads to division by zero or invalid physical state)\",\"Weight is 0 or negative\",\"Extremely high or low inputs exceeding normal human limits\"],\"error_handling_strategy\":\"If an validation error or division by zero occurs, return a dictionary in the format {'error': 'Error message describing the issue'}.\"}"
+                    }
+                  ],
+                  "role": "model"
+                }
+              },
+              {
+                "author": "script_generator",
+                "content": {
+                  "parts": [
+                    {
+                      "text": "{\"script_content\": \"def calculate(inputs: dict) -> dict:\\n    # Initialize default result keys to handle error paths gracefully\\n    result = {\\\"bmi_value\\\": 0.0}\\n    \\n    try:\\n        # Ensure keys are present in the input dictionary\\n        if 'height_cm' not in inputs or 'weight_kg' not in inputs:\\n            return {\\\"error\\\": \\\"Missing required fields: height_cm and weight_kg\\\", \\\"bmi_value\\\": 0.0}\\n            \\n        # Cast values aggressively to float\\n        try:\\n            height_cm = float(inputs['height_cm'])\\n            weight_kg = float(inputs['weight_kg'])\\n        except (ValueError, TypeError):\\n            return {\\\"error\\\": \\\"Invalid input type. Numeric inputs are required.\\\", \\\"bmi_value\\\": 0.0}\\n            \\n        # Validate range values according to parameters spec\\n        if height_cm < 1.0 or height_cm > 300.0:\\n            return {\\\"error\\\": \\\"Height must be between 1.0 and 300.0 cm.\\\", \\\"bmi_value\\\": 0.0}\\n        if weight_kg < 1.0 or weight_kg > 1000.0:\\n            return {\\\"error\\\": \\\"Weight must be between 1.0 and 1000.0 kg.\\\", \\\"bmi_value\\\": 0.0}\\n            \\n        # Conversion and BMI computation\\n        height_m = height_cm / 100.0\\n        \\n        # Guard against potential division by zero (even though min is validated to 1.0)\\n        if height_m == 0.0:\\n            return {\\\"error\\\": \\\"Height cannot be zero.\\\", \\\"bmi_value\\\": 0.0}\\n            \\n        bmi = weight_kg / (height_m * height_m)\\n        result[\\\"bmi_value\\\"] = round(bmi, 2)\\n        return result\\n        \\n    except Exception as e:\\n        return {\\\"error\\\": f\\\"An unexpected error occurred: {str(e)}\\\", \\\"bmi_value\\\": 0.0}\"}"
+                    }
+                  ],
+                  "role": "model"
+                }
+              },
+              {
+                "author": "ui_schema_generator",
+                "content": {
+                  "parts": [
+                    {
+                      "text": "<a2ui-json>\n[\n  {\n    \"version\": \"v0.9\",\n    \"updateComponents\": {\n      \"surfaceId\": \"bmi-calculator-surface\",\n      \"components\": [\n        {\n          \"id\": \"title-text\",\n          \"component\": \"Text\",\n          \"variant\": \"h4\",\n          \"text\": \"BMI Calculator\"\n        },\n        {\n          \"id\": \"description-text\",\n          \"component\": \"Text\",\n          \"variant\": \"body\",\n          \"text\": \"Calculates Body Mass Index (BMI) using height in centimeters and weight in kilograms.\"\n        },\n        {\n          \"id\": \"root\",\n          \"component\": \"Column\",\n          \"children\": [\n            \"main-card\"\n          ]\n        },\n        {\n          \"id\": \"main-card\",\n          \"component\": \"Card\",\n          \"child\": \"main-column\"\n        },\n        {\n          \"id\": \"main-column\",\n          \"component\": \"Column\",\n          \"children\": [\n            \"title-text\",\n            \"description-text\",\n            \"height-input\",\n            \"height-slider\",\n            \"weight-input\",\n            \"weight-slider\",\n            \"calculate-button\",\n            \"results-card\"\n          ]\n        },\n        {\n          \"id\": \"height-input\",\n          \"component\": \"TextField\",\n          \"label\": \"Height (cm)\",\n          \"variant\": \"number\",\n          \"value\": {\n            \"path\": \"/height_cm\"\n          },\n          \"checks\": [\n            {\n              \"condition\": {\n                \"call\": \"required\",\n                \"args\": {\n                  \"value\": {\n                    \"path\": \"/height_cm\"\n                  }\n                }\n              },\n              \"message\": \"Height is required.\"\n            },\n            {\n              \"condition\": {\n                \"call\": \"numeric\",\n                \"args\": {\n                  \"value\": {\n                    \"path\": \"/height_cm\"\n                  },\n                  \"min\": 1,\n                  \"max\": 300\n                }\n              },\n              \"message\": \"Height must be between 1 and 300 cm.\"\n            }\n          ]\n        },\n        {\n          \"id\": \"height-slider\",\n          \"component\": \"Slider\",\n          \"min\": 1,\n          \"max\": 300,\n          \"value\": {\n            \"path\": \"/height_cm\"\n          }\n        },\n        {\n          \"id\": \"weight-input\",\n          \"component\": \"TextField\",\n          \"label\": \"Weight (kg)\",\n          \"variant\": \"number\",\n          \"value\": {\n            \"path\": \"/weight_kg\"\n          },\n          \"checks\": [\n            {\n              \"condition\": {\n                \"call\": \"required\",\n                \"args\": {\n                  \"value\": {\n                    \"path\": \"/weight_kg\"\n                  }\n                }\n              },\n              \"message\": \"Weight is required.\"\n            },\n            {\n              \"condition\": {\n                \"call\": \"numeric\",\n                \"args\": {\n                  \"value\": {\n                    \"path\": \"/weight_kg\"\n                  },\n                  \"min\": 1,\n                  \"max\": 1000\n                }\n              },\n              \"message\": \"Weight must be between 1 and 1000 kg.\"\n            }\n          ]\n        },\n        {\n          \"id\": \"weight-slider\",\n          \"component\": \"Slider\",\n          \"min\": 1,\n          \"max\": 1000,\n          \"value\": {\n            \"path\": \"/weight_kg\"\n          }\n        },\n        {\n          \"id\": \"calculate-button\",\n          \"component\": \"Button\",\n          \"variant\": \"primary\",\n          \"child\": \"calculate-button-text\",\n          \"action\": {\n            \"event\": {\n              \"name\": \"calculate\",\n              \"context\": {\n                \"height_cm\": {\n                  \"path\": \"/height_cm\"\n                },\n                \"weight_kg\": {\n                  \"path\": \"/weight_kg\"\n                }\n              }\n            }\n          }\n        },\n        {\n          \"id\": \"calculate-button-text\",\n          \"component\": \"Text\",\n          \"text\": \"Calculate BMI\"\n        },\n        {\n          \"id\": \"results-card\",\n          \"component\": \"Card\",\n          \"child\": \"results-column\"\n        },\n        {\n          \"id\": \"results-column\",\n          \"component\": \"Column\",\n          \"children\": [\n            \"bmi-result-row\"\n          ]\n        },\n        {\n          \"id\": \"bmi-result-row\",\n          \"component\": \"Row\",\n          \"justify\": \"spaceBetween\",\n          \"children\": [\n            \"bmi-result-label\",\n            \"bmi-result-value\"\n          ]\n        },\n        {\n          \"id\": \"bmi-result-label\",\n          \"component\": \"Text\",\n          \"text\": \"Calculated BMI\"\n        },\n        {\n          \"id\": \"bmi-result-value\",\n          \"component\": \"Text\",\n          \"text\": {\n            \"path\": \"/bmi_value\"\n          }\n        }\n      ]\n    }\n  },\n  {\n    \"version\": \"v0.9\",\n    \"updateDataModel\": {\n      \"surfaceId\": \"bmi-calculator-surface\",\n      \"value\": {\n        \"height_cm\": 170,\n        \"weight_kg\": 70,\n        \"bmi_value\": null\n      }\n    }\n  }\n]\n</a2ui-json>"
+                    }
+                  ],
+                  "role": "model"
+                }
+              },
+              {
+                "author": "script_judge",
+                "content": {
+                  "parts": [
+                    {
+                      "text": "{\n  \"verdict\": \"VALID\"\n}"
+                    }
+                  ],
+                  "role": "model"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "prompt": {
+        "parts": [
+          {
+            "text": "Create a compound interest calculator. Inputs: principal amount, annual interest rate, and number of years. Show the final amount and total interest earned."
+          }
+        ],
+        "role": "user"
+      },
+      "responses": [
+        {
+          "response": {
+            "parts": [
+              {
+                "text": "{\"verdict\": \"INVALID\", \"feedback\": \"The script is flawed because it fails to include the mandatory result keys ('final_amount' and 'total_interest') in the dictionary when returning an error state. According to the criteria, the script MUST return all output keys defined in the schema (even as null or 0.0) in EVERY execution path to ensure the UI does not break. Please update the error handling block to include both result keys alongside the error message.\"}"
+              }
+            ],
+            "role": "model"
+          }
+        }
+      ],
+      "eval_case_id": "financial_calculator",
+      "agent_data": {
+        "agents": {
+          "calculator_generator": {
+            "agent_id": "calculator_generator",
+            "agent_type": "Workflow",
+            "description": "",
+            "tools": [],
+            "sub_agents": []
+          }
+        },
+        "turns": [
+          {
+            "turn_index": 0,
+            "turn_id": "turn_0",
+            "events": [
+              {
+                "author": "blueprint_generator",
+                "content": {
+                  "parts": [
+                    {
+                      "text": "{\n  \"is_calculator\": true,\n  \"reasoning\": \"The user wants to compute compound interest based on principal, rate, and time, returning the final amount and interest earned.\",\n  \"calculator_name\": \"Compound Interest Calculator\",\n  \"calculator_description\": \"Calculates the future value of an investment and the total interest accumulated over time, compounded annually.\",\n  \"parameters\": [\n    {\n      \"name\": \"principal\",\n      \"kind\": \"input\",\n      \"component_type\": \"TextField\",\n      \"keyboard_type\": \"number\",\n      \"validation\": {\n        \"min_value\": 0,\n        \"max_value\": 1000000000,\n        \"required\": true\n      }\n    },\n    {\n      \"name\": \"rate\",\n      \"kind\": \"input\",\n      \"component_type\": \"TextField\",\n      \"keyboard_type\": \"number\",\n      \"validation\": {\n        \"min_value\": 0,\n        \"max_value\": 100,\n        \"required\": true\n      }\n    },\n    {\n      \"name\": \"years\",\n      \"kind\": \"input\",\n      \"component_type\": \"TextField\",\n      \"keyboard_type\": \"number\",\n      \"validation\": {\n        \"min_value\": 0,\n        \"max_value\": 100,\n        \"required\": true\n      }\n    },\n    {\n      \"name\": \"final_amount\",\n      \"kind\": \"result\",\n      \"component_type\": \"Result\",\n      \"data_type\": \"number\"\n    },\n    {\n      \"name\": \"total_interest\",\n      \"kind\": \"result\",\n      \"component_type\": \"Result\",\n      \"data_type\": \"number\"\n    }\n  ],\n  \"computation_logic\": \"Convert the input annual interest rate percentage into a decimal factor by dividing by 100. Apply the compound interest formula: Final Amount = Principal * ((1 + Rate) ** Years). Total Interest Earned is calculated as Final Amount - Principal. Round all final outputs to 2 decimal places using standard Python round().\",\n  \"edge_cases\": [\n    \"Principal less than 0\",\n    \"Interest rate less than 0\",\n    \"Years less than 0\"\n  ],\n  \"error_handling_strategy\": \"If any input validation fails or is less than zero, return a JSON dictionary containing the error key: {'error': 'Invalid Input: All values must be greater than or equal to 0'}\"\n}"
+                    }
+                  ],
+                  "role": "model"
+                }
+              },
+              {
+                "author": "script_generator",
+                "content": {
+                  "parts": [
+                    {
+                      "text": "{\"script_content\": \"def calculate(inputs: dict) -> dict:\\n    # Initialize result fields to fallback values\\n    results = {\\n        \\\"final_amount\\\": 0.0,\\n        \\\"total_interest\\\": 0.0\\n    }\\n\\n    try:\\n        # Safeguard and cast inputs to float\\n        principal = float(inputs.get(\\\"principal\\\", 0.0))\\n        rate = float(inputs.get(\\\"rate\\\", 0.0))\\n        years = float(inputs.get(\\\"years\\\", 0.0))\\n    except (ValueError, TypeError):\\n        results[\\\"error\\\"] = \\\"Invalid Input: All values must be greater than or equal to 0\\\"\\n        return results\\n\\n    # Validation check based on blueprint specifications\\n    if principal < 0.0 or rate < 0.0 or years < 0.0:\\n        results[\\\"error\\\"] = \\\"Invalid Input: All values must be greater than or equal to 0\\\"\\n        return results\\n\\n    # Computation logic\\n    rate_decimal = rate / 100.0\\n    final_amount = principal * ((1.0 + rate_decimal) ** years)\\n    total_interest = final_amount - principal\\n\\n    results[\\\"final_amount\\\"] = round(final_amount, 2)\\n    results[\\\"total_interest\\\"] = round(total_interest, 2)\\n\\n    return results\"}"
+                    }
+                  ],
+                  "role": "model"
+                }
+              },
+              {
+                "author": "ui_schema_generator",
+                "content": {
+                  "parts": [
+                    {
+                      "text": "<a2ui-json>\n[\n  {\n    \"version\": \"v0.9\",\n    \"updateComponents\": {\n      \"surfaceId\": \"calculator-surface\",\n      \"components\": [\n        {\n          \"id\": \"title-text\",\n          \"component\": \"Text\",\n          \"variant\": \"h4\",\n          \"text\": \"Compound Interest Calculator\"\n        },\n        {\n          \"id\": \"description-text\",\n          \"component\": \"Text\",\n          \"variant\": \"body\",\n          \"text\": \"Calculates the future value of an investment and the total interest accumulated over time, compounded annually.\"\n        },\n        {\n          \"id\": \"root\",\n          \"component\": \"Column\",\n          \"children\": [\n            \"main-card\"\n          ]\n        },\n        {\n          \"id\": \"main-card\",\n          \"component\": \"Card\",\n          \"child\": \"main-column\"\n        },\n        {\n          \"id\": \"main-column\",\n          \"component\": \"Column\",\n          \"children\": [\n            \"title-text\",\n            \"description-text\",\n            \"principal-input\",\n            \"rate-input\",\n            \"rate-slider\",\n            \"years-input\",\n            \"years-slider\",\n            \"calculate-button\",\n            \"results-card\"\n          ]\n        },\n        {\n          \"id\": \"principal-input\",\n          \"component\": \"TextField\",\n          \"label\": \"Principal Amount ($)\",\n          \"variant\": \"number\",\n          \"value\": {\n            \"path\": \"/principal\"\n          },\n          \"checks\": [\n            {\n              \"condition\": {\n                \"call\": \"required\",\n                \"args\": {\n                  \"value\": {\n                    \"path\": \"/principal\"\n                  }\n                }\n              },\n              \"message\": \"Principal is required.\"\n            },\n            {\n              \"condition\": {\n                \"call\": \"numeric\",\n                \"args\": {\n                  \"value\": {\n                    \"path\": \"/principal\"\n                  },\n                  \"min\": 0.0,\n                  \"max\": 1000000000.0\n                }\n              },\n              \"message\": \"Principal must be between 0 and 1,000,000,000.\"\n            }\n          ]\n        },\n        {\n          \"id\": \"rate-input\",\n          \"component\": \"TextField\",\n          \"label\": \"Annual Interest Rate (%)\",\n          \"variant\": \"number\",\n          \"value\": {\n            \"path\": \"/rate\"\n          },\n          \"checks\": [\n            {\n              \"condition\": {\n                \"call\": \"required\",\n                \"args\": {\n                  \"value\": {\n                    \"path\": \"/rate\"\n                  }\n                }\n              },\n              \"message\": \"Interest rate is required.\"\n            },\n            {\n              \"condition\": {\n                \"call\": \"numeric\",\n                \"args\": {\n                  \"value\": {\n                    \"path\": \"/rate\"\n                  },\n                  \"min\": 0.0,\n                  \"max\": 100.0\n                }\n              },\n              \"message\": \"Rate must be between 0% and 100%.\"\n            }\n          ]\n        },\n        {\n          \"id\": \"rate-slider\",\n          \"component\": \"Slider\",\n          \"label\": \"Adjust Rate (%)\",\n          \"min\": 0,\n          \"max\": 100,\n          \"value\": {\n            \"path\": \"/rate\"\n          }\n        },\n        {\n          \"id\": \"years-input\",\n          \"component\": \"TextField\",\n          \"label\": \"Time Period (Years)\",\n          \"variant\": \"number\",\n          \"value\": {\n            \"path\": \"/years\"\n          },\n          \"checks\": [\n            {\n              \"condition\": {\n                \"call\": \"required\",\n                \"args\": {\n                  \"value\": {\n                    \"path\": \"/years\"\n                  }\n                }\n              },\n              \"message\": \"Years is required.\"\n            },\n            {\n              \"condition\": {\n                \"call\": \"numeric\",\n                \"args\": {\n                  \"value\": {\n                    \"path\": \"/years\"\n                  },\n                  \"min\": 0.0,\n                  \"max\": 100.0\n                }\n              },\n              \"message\": \"Years must be between 0 and 100.\"\n            }\n          ]\n        },\n        {\n          \"id\": \"years-slider\",\n          \"component\": \"Slider\",\n          \"label\": \"Adjust Years\",\n          \"min\": 0,\n          \"max\": 100,\n          \"value\": {\n            \"path\": \"/years\"\n          }\n        },\n        {\n          \"id\": \"calculate-button\",\n          \"component\": \"Button\",\n          \"variant\": \"primary\",\n          \"child\": \"calculate-button-text\",\n          \"action\": {\n            \"event\": {\n              \"name\": \"calculate\",\n              \"context\": {\n                \"principal\": {\n                  \"path\": \"/principal\"\n                },\n                \"rate\": {\n                  \"path\": \"/rate\"\n                },\n                \"years\": {\n                  \"path\": \"/years\"\n                }\n              }\n            }\n          }\n        },\n        {\n          \"id\": \"calculate-button-text\",\n          \"component\": \"Text\",\n          \"text\": \"Calculate Interest\"\n        },\n        {\n          \"id\": \"results-card\",\n          \"component\": \"Card\",\n          \"child\": \"results-column\"\n        },\n        {\n          \"id\": \"results-column\",\n          \"component\": \"Column\",\n          \"children\": [\n            \"final-amount-row\",\n            \"total-interest-row\"\n          ]\n        },\n        {\n          \"id\": \"final-amount-row\",\n          \"component\": \"Row\",\n          \"justify\": \"spaceBetween\",\n          \"children\": [\n            \"final-amount-label\",\n            \"final-amount-value\"\n          ]\n        },\n        {\n          \"id\": \"final-amount-label\",\n          \"component\": \"Text\",\n          \"text\": \"Future Value (Final Amount)\"\n        },\n        {\n          \"id\": \"final-amount-value\",\n          \"component\": \"Text\",\n          \"text\": {\n            \"path\": \"/final_amount\"\n          }\n        },\n        {\n          \"id\": \"total-interest-row\",\n          \"component\": \"Row\",\n          \"justify\": \"spaceBetween\",\n          \"children\": [\n            \"total-interest-label\",\n            \"total-interest-value\"\n          ]\n        },\n        {\n          \"id\": \"total-interest-label\",\n          \"component\": \"Text\",\n          \"text\": \"Total Interest Earned\"\n        },\n        {\n          \"id\": \"total-interest-value\",\n          \"component\": \"Text\",\n          \"text\": {\n            \"path\": \"/total_interest\"\n          }\n        }\n      ]\n    }\n  },\n  {\n    \"version\": \"v0.9\",\n    \"updateDataModel\": {\n      \"surfaceId\": \"calculator-surface\",\n      \"value\": {\n        \"principal\": 1000.0,\n        \"rate\": 5.0,\n        \"years\": 10.0,\n        \"final_amount\": null,\n        \"total_interest\": null\n      }\n    }\n  }\n]\n</a2ui-json>"
+                    }
+                  ],
+                  "role": "model"
+                }
+              },
+              {
+                "author": "script_judge",
+                "content": {
+                  "parts": [
+                    {
+                      "text": "{\"verdict\": \"INVALID\", \"feedback\": \"The script is flawed because it fails to include the mandatory result keys ('final_amount' and 'total_interest') in the dictionary when returning an error state. According to the criteria, the script MUST return all output keys defined in the schema (even as null or 0.0) in EVERY execution path to ensure the UI does not break. Please update the error handling block to include both result keys alongside the error message.\"}"
+                    }
+                  ],
+                  "role": "model"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "prompt": {
+        "parts": [
+          {
+            "text": "What's the weather like in Paris today?"
+          }
+        ],
+        "role": "user"
+      },
+      "responses": [
+        {
+          "response": {
+            "parts": [
+              {
+                "text": "{\"is_calculator\": false, \"reasoning\": \"The user is asking for real-time weather information in Paris today. This requires live meteorological data, which cannot be computed locally or statically using a deterministic mathematical calculator without an external real-time API connection.\"}"
+              }
+            ],
+            "role": "model"
+          }
+        }
+      ],
+      "eval_case_id": "reject_non_calculator",
+      "agent_data": {
+        "agents": {
+          "calculator_generator": {
+            "agent_id": "calculator_generator",
+            "agent_type": "Workflow",
+            "description": "",
+            "tools": [],
+            "sub_agents": []
+          }
+        },
+        "turns": [
+          {
+            "turn_index": 0,
+            "turn_id": "turn_0",
+            "events": [
+              {
+                "author": "blueprint_generator",
+                "content": {
+                  "parts": [
+                    {
+                      "text": "{\"is_calculator\": false, \"reasoning\": \"The user is asking for real-time weather information in Paris today. This requires live meteorological data, which cannot be computed locally or statically using a deterministic mathematical calculator without an external real-time API connection.\"}"
+                    }
+                  ],
+                  "role": "model"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "prompt": {
+        "parts": [
+          {
+            "text": "Tell me a joke about programming"
+          }
+        ],
+        "role": "user"
+      },
+      "responses": [
+        {
+          "response": {
+            "parts": [
+              {
+                "text": "{\n  \"is_calculator\": false,\n  \"reasoning\": \"The user requested a programming joke rather than a utility, calculator, or converter tool. Therefore, this does not fall under the category of a calculator application.\",\n  \"calculator_name\": \"\",\n  \"calculator_description\": \"\",\n  \"parameters\": [],\n  \"computation_logic\": \"\",\n  \"edge_cases\": [],\n  \"error_handling_strategy\": \"\"\n}"
+              }
+            ],
+            "role": "model"
+          }
+        }
+      ],
+      "eval_case_id": "reject_chat",
+      "agent_data": {
+        "agents": {
+          "calculator_generator": {
+            "agent_id": "calculator_generator",
+            "agent_type": "Workflow",
+            "description": "",
+            "tools": [],
+            "sub_agents": []
+          }
+        },
+        "turns": [
+          {
+            "turn_index": 0,
+            "turn_id": "turn_0",
+            "events": [
+              {
+                "author": "blueprint_generator",
+                "content": {
+                  "parts": [
+                    {
+                      "text": "{\n  \"is_calculator\": false,\n  \"reasoning\": \"The user requested a programming joke rather than a utility, calculator, or converter tool. Therefore, this does not fall under the category of a calculator application.\",\n  \"calculator_name\": \"\",\n  \"calculator_description\": \"\",\n  \"parameters\": [],\n  \"computation_logic\": \"\",\n  \"edge_cases\": [],\n  \"error_handling_strategy\": \"\"\n}"
+                    }
+                  ],
+                  "role": "model"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "prompt": {
+        "parts": [
+          {
+            "text": "Create a calculator that divides X by Y. Make sure it doesn't crash if Y is zero."
+          }
+        ],
+        "role": "user"
+      },
+      "responses": [
+        {
+          "response": {
+            "parts": [
+              {
+                "text": "{\n  \"verdict\": \"INVALID\",\n  \"feedback\": \"The script fails criteria #3. The UI schema expects two top-level paths for the output: '/division_result' and '/error'. The script returns a dictionary that only contains one of these keys at a time (e.g., if there is an error, 'division_result' is missing from the returned dictionary; if successful, 'error' is missing). The script must always return both keys to ensure the UI state is completely cleared/updated (e.g., set 'error' to null when successful, and set 'division_result' to null or a placeholder when an error occurs).\"\n}"
+              }
+            ],
+            "role": "model"
+          }
+        }
+      ],
+      "eval_case_id": "edge_case_math",
+      "agent_data": {
+        "agents": {
+          "calculator_generator": {
+            "agent_id": "calculator_generator",
+            "agent_type": "Workflow",
+            "description": "",
+            "tools": [],
+            "sub_agents": []
+          }
+        },
+        "turns": [
+          {
+            "turn_index": 0,
+            "turn_id": "turn_0",
+            "events": [
+              {
+                "author": "blueprint_generator",
+                "content": {
+                  "parts": [
+                    {
+                      "text": "{\"is_calculator\": true, \"reasoning\": \"The user wants to perform a basic mathematical division of X by Y, with safety handling for division by zero. This constitutes a classic calculator behavior.\", \"calculator_name\": \"Simple Division Calculator\", \"calculator_description\": \"A basic calculator that divides a number X by a number Y and safely handles division by zero.\", \"parameters\": [{\"name\": \"x_value\", \"kind\": \"input\", \"component_type\": \"TextField\", \"keyboard_type\": \"number\", \"validation\": {\"min_value\": null, \"max_value\": null, \"step\": null, \"required\": true, \"pattern\": null}}, {\"name\": \"y_value\", \"kind\": \"input\", \"component_type\": \"TextField\", \"keyboard_type\": \"number\", \"validation\": {\"min_value\": null, \"max_value\": null, \"step\": null, \"required\": true, \"pattern\": null}}, {\"name\": \"division_result\", \"kind\": \"result\", \"component_type\": \"Result\", \"data_type\": \"number\"}], \"computation_logic\": \"1. Retrieve the input values 'x_value' and 'y_value' as floats.\\n2. Check if 'y_value' is equal to 0.\\n3. If 'y_value' is 0, trigger the error handling strategy and return an error message.\\n4. Otherwise, perform the division: result = x_value / y_value.\\n5. Round the final output to 4 decimal places using standard Python round().\", \"edge_cases\": [\"Division by zero when y_value is 0\", \"Non-numeric inputs which should be rejected by the validation step\"], \"error_handling_strategy\": \"If an error occurs (such as y_value being 0), return a dictionary with the exact structure: {'error': 'Division by zero is undefined.'}.\"}"
+                    }
+                  ],
+                  "role": "model"
+                }
+              },
+              {
+                "author": "script_generator",
+                "content": {
+                  "parts": [
+                    {
+                      "text": "{\n  \"script_content\": \"def calculate(inputs: dict) -> dict:\\n    # Initialize result fallback\\n    output = {\\n        \\\"division_result\\\": 0.0\\n    }\\n    \\n    try:\\n        # Retrieve inputs and aggressively cast to float\\n        x_raw = inputs.get(\\\"x_value\\\")\\n        y_raw = inputs.get(\\\"y_value\\\")\\n        \\n        if x_raw is None or y_raw is None:\\n            output[\\\"error\\\"] = \\\"Both x and y values are required.\\\"\\n            return output\\n            \\n        x_value = float(x_raw)\\n        y_value = float(y_raw)\\n        \\n    except (ValueError, TypeError):\\n        output[\\\"error\\\"] = \\\"Invalid input format. Please enter valid numbers.\\\"\\n        return output\\n\\n    # Check for division by zero\\n    if y_value == 0.0:\\n        output[\\\"error\\\"] = \\\"Division by zero is undefined.\\\"\\n        return output\\n\\n    # Perform calculation and round to 4 decimal places\\n    result = x_value / y_value\\n    output[\\\"division_result\\\"] = round(result, 4)\\n    \\n    return output\"\n}"
+                    }
+                  ],
+                  "role": "model"
+                }
+              },
+              {
+                "author": "ui_schema_generator",
+                "content": {
+                  "parts": [
+                    {
+                      "text": "<a2ui-json>\n[\n  {\n    \"version\": \"v0.9\",\n    \"updateComponents\": {\n      \"surfaceId\": \"calculator-surface\",\n      \"components\": [\n        {\n          \"id\": \"title-text\",\n          \"component\": \"Text\",\n          \"variant\": \"h4\",\n          \"text\": \"Simple Division Calculator\"\n        },\n        {\n          \"id\": \"description-text\",\n          \"component\": \"Text\",\n          \"variant\": \"body\",\n          \"text\": \"A basic calculator that divides a number X by a number Y and safely handles division by zero.\"\n        },\n        {\n          \"id\": \"root\",\n          \"component\": \"Column\",\n          \"children\": [\n            \"main-card\"\n          ]\n        },\n        {\n          \"id\": \"main-card\",\n          \"component\": \"Card\",\n          \"child\": \"main-column\"\n        },\n        {\n          \"id\": \"main-column\",\n          \"component\": \"Column\",\n          \"children\": [\n            \"title-text\",\n            \"description-text\",\n            \"x-input-container\",\n            \"y-input-container\",\n            \"calculate-button\",\n            \"results-card\",\n            \"error-display\"\n          ]\n        },\n        {\n          \"id\": \"x-input-container\",\n          \"component\": \"Column\",\n          \"children\": [\n            \"x-value-input\"\n          ]\n        },\n        {\n          \"id\": \"x-value-input\",\n          \"component\": \"TextField\",\n          \"label\": \"Number X (Numerator)\",\n          \"variant\": \"number\",\n          \"value\": {\n            \"path\": \"/x_value\"\n          },\n          \"checks\": [\n            {\n              \"condition\": {\n                \"call\": \"required\",\n                \"args\": {\n                  \"value\": {\n                    \"path\": \"/x_value\"\n                  }\n                }\n              },\n              \"message\": \"Number X is required.\"\n            }\n          ]\n        },\n        {\n          \"id\": \"y-input-container\",\n          \"component\": \"Column\",\n          \"children\": [\n            \"y-value-input\"\n          ]\n        },\n        {\n          \"id\": \"y-value-input\",\n          \"component\": \"TextField\",\n          \"label\": \"Number Y (Denominator)\",\n          \"variant\": \"number\",\n          \"value\": {\n            \"path\": \"/y_value\"\n          },\n          \"checks\": [\n            {\n              \"condition\": {\n                \"call\": \"required\",\n                \"args\": {\n                  \"value\": {\n                    \"path\": \"/y_value\"\n                  }\n                }\n              },\n              \"message\": \"Number Y is required.\"\n            }\n          ]\n        },\n        {\n          \"id\": \"calculate-button\",\n          \"component\": \"Button\",\n          \"variant\": \"primary\",\n          \"child\": \"calculate-button-text\",\n          \"action\": {\n            \"event\": {\n              \"name\": \"calculate\",\n              \"context\": {\n                \"x_value\": {\n                  \"path\": \"/x_value\"\n                },\n                \"y_value\": {\n                  \"path\": \"/y_value\"\n                }\n              }\n            }\n          }\n        },\n        {\n          \"id\": \"calculate-button-text\",\n          \"component\": \"Text\",\n          \"text\": \"Divide\"\n        },\n        {\n          \"id\": \"results-card\",\n          \"component\": \"Card\",\n          \"child\": \"results-column\"\n        },\n        {\n          \"id\": \"results-column\",\n          \"component\": \"Column\",\n          \"children\": [\n            \"result-row\"\n          ]\n        },\n        {\n          \"id\": \"result-row\",\n          \"component\": \"Row\",\n          \"justify\": \"spaceBetween\",\n          \"children\": [\n            \"result-label\",\n            \"result-value\"\n          ]\n        },\n        {\n          \"id\": \"result-label\",\n          \"component\": \"Text\",\n          \"text\": \"Division Result (X / Y)\"\n        },\n        {\n          \"id\": \"result-value\",\n          \"component\": \"Text\",\n          \"text\": {\n            \"path\": \"/division_result\"\n          }\n        },\n        {\n          \"id\": \"error-display\",\n          \"component\": \"Text\",\n          \"variant\": \"caption\",\n          \"text\": {\n            \"path\": \"/error\"\n          }\n        }\n      ]\n    }\n  },\n  {\n    \"version\": \"v0.9\",\n    \"updateDataModel\": {\n      \"surfaceId\": \"calculator-surface\",\n      \"value\": {\n        \"x_value\": 10,\n        \"y_value\": 2,\n        \"division_result\": null,\n        \"error\": null\n      }\n    }\n  }\n]\n</a2ui-json>"
+                    }
+                  ],
+                  "role": "model"
+                }
+              },
+              {
+                "author": "script_judge",
+                "content": {
+                  "parts": [
+                    {
+                      "text": "{\n  \"verdict\": \"INVALID\",\n  \"feedback\": \"The script fails criteria #3. The UI schema expects two top-level paths for the output: '/division_result' and '/error'. The script returns a dictionary that only contains one of these keys at a time (e.g., if there is an error, 'division_result' is missing from the returned dictionary; if successful, 'error' is missing). The script must always return both keys to ensure the UI state is completely cleared/updated (e.g., set 'error' to null when successful, and set 'division_result' to null or a placeholder when an error occurs).\"\n}"
+                    }
+                  ],
+                  "role": "model"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "prompt": {
+        "parts": [
+          {
+            "text": "Create a loan calculator that asks for loan amount, interest rate, and a dropdown choice for compounding frequency (monthly, quarterly, annually). Output the total payment."
+          }
+        ],
+        "role": "user"
+      },
+      "responses": [
+        {
+          "response": {
+            "parts": [
+              {
+                "text": "{\n  \"verdict\": \"VALID\"\n}"
+              }
+            ],
+            "role": "model"
+          }
+        }
+      ],
+      "eval_case_id": "complex_schema",
+      "agent_data": {
+        "agents": {
+          "calculator_generator": {
+            "agent_id": "calculator_generator",
+            "agent_type": "Workflow",
+            "description": "",
+            "tools": [],
+            "sub_agents": []
+          }
+        },
+        "turns": [
+          {
+            "turn_index": 0,
+            "turn_id": "turn_0",
+            "events": [
+              {
+                "author": "blueprint_generator",
+                "content": {
+                  "parts": [
+                    {
+                      "text": "{\"is_calculator\":true,\"reasoning\":\"The user wants to compute the total payment of a loan given the loan amount, interest rate, and compounding frequency. This requires input parameters, specific mathematical formulas, and a calculated result output, matching the structure of a financial calculator.\",\"calculator_name\":\"Compound Interest Loan Calculator\",\"calculator_description\":\"Calculates the total payment of a loan based on the principal amount, annual interest rate, and the compounding frequency (monthly, quarterly, or annually) assuming interest accumulates over a specified term.\",\"parameters\":[{\"name\":\"loan_amount\",\"kind\":\"input\",\"component_type\":\"TextField\",\"keyboard_type\":\"number\",\"validation\":{\"min_value\":1,\"max_value\":100000000,\"step\":1,\"required\":true}},{\"name\":\"interest_rate\",\"kind\":\"input\",\"component_type\":\"TextField\",\"keyboard_type\":\"number\",\"validation\":{\"min_value\":0,\"max_value\":100,\"step\":0.01,\"required\":true}},{\"name\":\"loan_term_years\",\"kind\":\"input\",\"component_type\":\"TextField\",\"keyboard_type\":\"number\",\"validation\":{\"min_value\":1,\"max_value\":100,\"step\":1,\"required\":true}},{\"name\":\"compounding_frequency\",\"kind\":\"input\",\"component_type\":\"ChoicePicker\",\"options\":[{\"label\":\"Monthly\",\"value\":\"monthly\"},{\"label\":\"Quarterly\",\"value\":\"quarterly\"},{\"label\":\"Annually\",\"value\":\"annually\"}],\"is_multi\":false},{\"name\":\"total_payment\",\"kind\":\"result\",\"component_type\":\"Result\",\"data_type\":\"number\"},{\"name\":\"total_interest\",\"kind\":\"result\",\"component_type\":\"Result\",\"data_type\":\"number\"}],\"computation_logic\":\"1. Extract 'loan_amount', 'interest_rate' (as percentage), 'loan_term_years', and 'compounding_frequency' from the inputs. Note that 'compounding_frequency' is selected via a ChoicePicker and must be extracted from a single-item list (e.g., ['monthly']).\\n2. Map the compounding frequency string to a numerical compounding periods per year (n): 'monthly' = 12, 'quarterly' = 4, 'annually' = 1.\\n3. Convert the interest rate to a decimal: r = interest_rate / 100.\\n4. Calculate the total payment (accumulated value) using the compound interest formula: Total Payment = loan_amount * (1 + r / n) ** (n * loan_term_years).\\n5. Calculate total interest paid: Total Interest = Total Payment - loan_amount.\\n6. Round all final outputs to exactly 2 decimal places using standard Python round().\",\"edge_cases\":[\"Loan amount is less than or equal to 0.\",\"Interest rate is negative.\",\"Loan term is less than or equal to 0.\",\"Selected compounding frequency is invalid or missing.\"],\"error_handling_strategy\":\"If any input validation fails (e.g., negative values, missing required fields, or division by zero), return an error dictionary containing a single key 'error' with a descriptive string message, such as {'error': 'Invalid Input: Loan amount must be greater than 0.'}.\"}"
+                    }
+                  ],
+                  "role": "model"
+                }
+              },
+              {
+                "author": "script_generator",
+                "content": {
+                  "parts": [
+                    {
+                      "text": "{\n  \"script_content\": \"def calculate(inputs: dict) -> dict:\\n    # Default result structure with fallback values\\n    results = {\\n        \\\"total_payment\\\": 0.0,\\n        \\\"total_interest\\\": 0.0\\n    }\\n\\n    try:\\n        # 1. Extract and cast numerical values\\n        if \\\"loan_amount\\\" not in inputs or inputs[\\\"loan_amount\\\"] is None:\\n            return {\\\"error\\\": \\\"Missing loan amount.\\\", **results}\\n        loan_amount = float(inputs[\\\"loan_amount\\\"])\\n        if loan_amount <= 0:\\n            return {\\\"error\\\": \\\"Invalid Input: Loan amount must be greater than 0.\\\", **results}\\n\\n        if \\\"interest_rate\\\" not in inputs or inputs[\\\"interest_rate\\\"] is None:\\n            return {\\\"error\\\": \\\"Missing interest rate.\\\", **results}\\n        interest_rate = float(inputs[\\\"interest_rate\\\"])\\n        if interest_rate < 0:\\n            return {\\\"error\\\": \\\"Invalid Input: Interest rate cannot be negative.\\\", **results}\\n\\n        if \\\"loan_term_years\\\" not in inputs or inputs[\\\"loan_term_years\\\"] is None:\\n            return {\\\"error\\\": \\\"Missing loan term.\\\", **results}\\n        loan_term_years = float(inputs[\\\"loan_term_years\\\"])\\n        if loan_term_years <= 0:\\n            return {\\\"error\\\": \\\"Invalid Input: Loan term must be greater than 0.\\\", **results}\\n\\n        # 2. Extract and resolve compounding frequency\\n        freq_input = inputs.get(\\\"compounding_frequency\\\")\\n        if isinstance(freq_input, list):\\n            if len(freq_input) > 0:\\n                freq = freq_input[0]\\n            else:\\n                return {\\\"error\\\": \\\"Please select a compounding frequency.\\\", **results}\\n        else:\\n            freq = freq_input\\n\\n        if not freq:\\n            return {\\\"error\\\": \\\"Please select a compounding frequency.\\\", **results}\\n\\n        freq_mapping = {\\n            \\\"monthly\\\": 12,\\n            \\\"quarterly\\\": 4,\\n            \\\"annually\\\": 1\\n        }\\n\\n        freq_str = str(freq).lower().strip()\\n        if freq_str not in freq_mapping:\\n            return {\\\"error\\\": f\\\"Invalid compounding frequency: {freq}\\\", **results}\\n\\n        n = freq_mapping[freq_str]\\n\\n        # 3. Perform calculations\\n        r = interest_rate / 100.0\\n        total_payment = loan_amount * ((1 + r / n) ** (n * loan_term_years))\\n        total_interest = total_payment - loan_amount\\n\\n        # 4. Populate rounded outputs\\n        results[\\\"total_payment\\\"] = round(total_payment, 2)\\n        results[\\\"total_interest\\\"] = round(total_interest, 2)\\n        return results\\n\\n    except Exception as e:\\n        return {\\\"error\\\": f\\\"An error occurred during calculation: {str(e)}\\\", **results}\\n\"\n}"
+                    }
+                  ],
+                  "role": "model"
+                }
+              },
+              {
+                "author": "ui_schema_generator",
+                "content": {
+                  "parts": [
+                    {
+                      "text": "<a2ui-json>\n[\n  {\n    \"version\": \"v0.9\",\n    \"updateComponents\": {\n      \"surfaceId\": \"calculator-surface\",\n      \"components\": [\n        {\n          \"id\": \"title-text\",\n          \"component\": \"Text\",\n          \"variant\": \"h4\",\n          \"text\": \"Compound Interest Loan Calculator\"\n        },\n        {\n          \"id\": \"description-text\",\n          \"component\": \"Text\",\n          \"variant\": \"body\",\n          \"text\": \"Calculates the total payment of a loan based on the principal amount, annual interest rate, and the compounding frequency (monthly, quarterly, or annually) assuming interest accumulates over a specified term.\"\n        },\n        {\n          \"id\": \"root\",\n          \"component\": \"Column\",\n          \"children\": [\n            \"main-card\"\n          ]\n        },\n        {\n          \"id\": \"main-card\",\n          \"component\": \"Card\",\n          \"child\": \"main-column\"\n        },\n        {\n          \"id\": \"main-column\",\n          \"component\": \"Column\",\n          \"children\": [\n            \"title-text\",\n            \"description-text\",\n            \"loan-amount-input\",\n            \"interest-rate-input\",\n            \"loan-term-input\",\n            \"loan-term-slider\",\n            \"compounding-frequency-picker\",\n            \"calculate-button\",\n            \"results-card\"\n          ]\n        },\n        {\n          \"id\": \"loan-amount-input\",\n          \"component\": \"TextField\",\n          \"label\": \"Loan Amount ($)\",\n          \"variant\": \"number\",\n          \"value\": {\n            \"path\": \"/loan_amount\"\n          },\n          \"checks\": [\n            {\n              \"condition\": {\n                \"call\": \"required\",\n                \"args\": {\n                  \"value\": {\n                    \"path\": \"/loan_amount\"\n                  }\n                }\n              },\n              \"message\": \"Loan amount is required.\"\n            },\n            {\n              \"condition\": {\n                \"call\": \"numeric\",\n                \"args\": {\n                  \"value\": {\n                    \"path\": \"/loan_amount\"\n                  },\n                  \"min\": 1.0,\n                  \"max\": 100000000.0\n                }\n              },\n              \"message\": \"Loan amount must be between 1.0 and 100,000,000.0.\"\n            }\n          ]\n        },\n        {\n          \"id\": \"interest-rate-input\",\n          \"component\": \"TextField\",\n          \"label\": \"Annual Interest Rate (%)\",\n          \"variant\": \"number\",\n          \"value\": {\n            \"path\": \"/interest_rate\"\n          },\n          \"checks\": [\n            {\n              \"condition\": {\n                \"call\": \"required\",\n                \"args\": {\n                  \"value\": {\n                    \"path\": \"/interest_rate\"\n                  }\n                }\n              },\n              \"message\": \"Interest rate is required.\"\n            },\n            {\n              \"condition\": {\n                \"call\": \"numeric\",\n                \"args\": {\n                  \"value\": {\n                    \"path\": \"/interest_rate\"\n                  },\n                  \"min\": 0.0,\n                  \"max\": 100.0\n                }\n              },\n              \"message\": \"Interest rate must be between 0.0% and 100.0%.\"\n            }\n          ]\n        },\n        {\n          \"id\": \"loan-term-input\",\n          \"component\": \"TextField\",\n          \"label\": \"Loan Term (Years)\",\n          \"variant\": \"number\",\n          \"value\": {\n            \"path\": \"/loan_term_years\"\n          },\n          \"checks\": [\n            {\n              \"condition\": {\n                \"call\": \"required\",\n                \"args\": {\n                  \"value\": {\n                    \"path\": \"/loan_term_years\"\n                  }\n                }\n              },\n              \"message\": \"Loan term is required.\"\n            },\n            {\n              \"condition\": {\n                \"call\": \"numeric\",\n                \"args\": {\n                  \"value\": {\n                    \"path\": \"/loan_term_years\"\n                  },\n                  \"min\": 1.0,\n                  \"max\": 100.0\n                }\n              },\n              \"message\": \"Loan term must be between 1 and 100 years.\"\n            }\n          ]\n        },\n        {\n          \"id\": \"loan-term-slider\",\n          \"component\": \"Slider\",\n          \"label\": \"Adjust Loan Term\",\n          \"min\": 1,\n          \"max\": 100,\n          \"value\": {\n            \"path\": \"/loan_term_years\"\n          }\n        },\n        {\n          \"id\": \"compounding-frequency-picker\",\n          \"component\": \"ChoicePicker\",\n          \"label\": \"Compounding Frequency\",\n          \"variant\": \"mutuallyExclusive\",\n          \"displayStyle\": \"chips\",\n          \"value\": {\n            \"path\": \"/compounding_frequency\"\n          },\n          \"options\": [\n            {\n              \"label\": \"Monthly\",\n              \"value\": \"monthly\"\n            },\n            {\n              \"label\": \"Quarterly\",\n              \"value\": \"quarterly\"\n            },\n            {\n              \"label\": \"Annually\",\n              \"value\": \"annually\"\n            }\n          ]\n        },\n        {\n          \"id\": \"calculate-button\",\n          \"component\": \"Button\",\n          \"variant\": \"primary\",\n          \"child\": \"calculate-button-text\",\n          \"action\": {\n            \"event\": {\n              \"name\": \"calculate\",\n              \"context\": {\n                \"loan_amount\": {\n                  \"path\": \"/loan_amount\"\n                },\n                \"interest_rate\": {\n                  \"path\": \"/interest_rate\"\n                },\n                \"loan_term_years\": {\n                  \"path\": \"/loan_term_years\"\n                },\n                \"compounding_frequency\": {\n                  \"path\": \"/compounding_frequency\"\n                }\n              }\n            }\n          }\n        },\n        {\n          \"id\": \"calculate-button-text\",\n          \"component\": \"Text\",\n          \"text\": \"Calculate Loan Payments\"\n        },\n        {\n          \"id\": \"results-card\",\n          \"component\": \"Card\",\n          \"child\": \"results-column\"\n        },\n        {\n          \"id\": \"results-column\",\n          \"component\": \"Column\",\n          \"children\": [\n            \"total-payment-row\",\n            \"total-interest-row\"\n          ]\n        },\n        {\n          \"id\": \"total-payment-row\",\n          \"component\": \"Row\",\n          \"justify\": \"spaceBetween\",\n          \"children\": [\n            \"total-payment-label\",\n            \"total-payment-value\"\n          ]\n        },\n        {\n          \"id\": \"total-payment-label\",\n          \"component\": \"Text\",\n          \"text\": \"Total Payment\"\n        },\n        {\n          \"id\": \"total-payment-value\",\n          \"component\": \"Text\",\n          \"text\": {\n            \"path\": \"/total_payment\"\n          }\n        },\n        {\n          \"id\": \"total-interest-row\",\n          \"component\": \"Row\",\n          \"justify\": \"spaceBetween\",\n          \"children\": [\n            \"total-interest-label\",\n            \"total-interest-value\"\n          ]\n        },\n        {\n          \"id\": \"total-interest-label\",\n          \"component\": \"Text\",\n          \"text\": \"Total Interest\"\n        },\n        {\n          \"id\": \"total-interest-value\",\n          \"component\": \"Text\",\n          \"text\": {\n            \"path\": \"/total_interest\"\n          }\n        }\n      ]\n    }\n  },\n  {\n    \"version\": \"v0.9\",\n    \"updateDataModel\": {\n      \"surfaceId\": \"calculator-surface\",\n      \"value\": {\n        \"loan_amount\": 10000.0,\n        \"interest_rate\": 5.0,\n        \"loan_term_years\": 5.0,\n        \"compounding_frequency\": [\n          \"monthly\"\n        ],\n        \"total_payment\": null,\n        \"total_interest\": null\n      }\n    }\n  }\n]\n</a2ui-json>"
+                    }
+                  ],
+                  "role": "model"
+                }
+              },
+              {
+                "author": "script_judge",
+                "content": {
+                  "parts": [
+                    {
+                      "text": "{\n  \"verdict\": \"VALID\"\n}"
+                    }
+                  ],
+                  "role": "model"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
